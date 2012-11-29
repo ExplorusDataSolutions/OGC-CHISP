@@ -1,4 +1,14 @@
+module OGCChisp
+  module Constraint
+    extend self
+    def matches?(request)
+      request.query_parameters["request"] == "GetCapabilities"
+    end
+  end
+end
+
 OGCChisp::Application.routes.draw do
+  match 'csw' => "service#GetCapabilities", :constraints => OGCChisp::Constraint
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
