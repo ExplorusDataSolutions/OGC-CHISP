@@ -11,6 +11,9 @@ end
 
 OGCChisp::Application.routes.draw do
   match 'csw' => "service#get_capabilities", :constraints => OGCChisp::Constraint.new("GetCapabilities")
+  match 'csw' => "service#get_domain", :constraints => OGCChisp::Constraint.new("GetDomain")
+  match 'csw' => "service#get_records", :constraints => OGCChisp::Constraint.new("GetRecords")
+  match 'csw' => "service#get_record_by_id", :constraints => OGCChisp::Constraint.new("GetRecordById")
   match '404' => "service#not_implemented_exception"
   root :to => "service#not_implemented_exception"
   # The priority is based upon order of creation:
