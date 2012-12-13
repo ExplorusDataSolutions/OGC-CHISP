@@ -18,7 +18,8 @@ OGCChisp::Application.routes.draw do
   match 'csw' => "service#check_post", :via => [:post, :options]
   match 'test.csw' => "service#test_csw"
   match '404' => "service#not_implemented_exception"
-  root :to => "service#not_implemented_exception"
+  match 'proxy' => "service#proxy"
+  root :to => "service#index"
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

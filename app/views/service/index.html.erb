@@ -1,0 +1,32 @@
+<div id="map" style="height: 500px;"></div>
+<script>
+	var map = L.map('map').setView([49.6, -100], 8);
+	// Use MapBox as base layer
+	L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
+
+	jQuery(function($) {
+		var popup = L.popup();
+
+		$.ajax({
+			url : '/proxy',
+			data : {
+				url : ['http://198.103.103.7/GinService/sos?', //
+				'REQUEST=GetFeatureOfInterest', //
+				'&VERSION=2.0.0', //
+				'&SERVICE=SOS', //
+				'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.2,49,-99.5,50.1', //
+				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0']//
+				.join('')
+			},
+			success : function(responseXML) {
+				var xml = responseXML, point, description, identifier;
+				$(xml).find('featureMember').each(function(index, element) {
+					point = $(element).find('pos')[0].textContent.split(' ');
+					description = $(element).find('description')[0].textContent;
+					identifier = $(element).find('identifier')[0].textContent;
+					new L.Marker(point).addTo(map).bindPopup(description + ' (' + identifier + ')');
+				})
+			}
+		});
+	})
+</script>

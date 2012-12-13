@@ -1,4 +1,13 @@
 class ServiceController < ApplicationController
+  def index
+
+  end
+
+  def proxy
+    self.content_type = "application/xml"
+    self.response_body = %x{curl -G "#{params['url']}"}
+  end
+
   def get_capabilities
     csw_proxy
   end
