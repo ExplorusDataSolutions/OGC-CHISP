@@ -5,8 +5,6 @@
 	L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
 
 	jQuery(function($) {
-		var popup = L.popup();
-
 		$.ajax({
 			url : '/proxy',
 			data : {
@@ -20,12 +18,16 @@
 			},
 			success : function(responseXML) {
 				var xml = responseXML, point, description, identifier;
+				var markers = new L.MarkerClusterGroup();
+
 				$(xml).find('featureMember').each(function(index, element) {
 					point = $(element).find('pos')[0].textContent.split(' ');
 					description = $(element).find('description')[0].textContent;
 					identifier = $(element).find('identifier')[0].textContent;
-					new L.Marker(point).addTo(map).bindPopup(description + ' (' + identifier + ')');
+					markers.addLayer(new L.Marker(point).bindPopup(description + ' (' + identifier + ')'));
 				})
+
+				map.addLayer(markers);
 			}
 		});
 	})
