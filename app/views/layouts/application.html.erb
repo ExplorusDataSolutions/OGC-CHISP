@@ -1,17 +1,42 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>OGCChisp</title>
-		<link rel="stylesheet" href="lib/leaflet-0.4.5/dist/leaflet.css" />
-		<link rel="stylesheet" href="lib/Leaflet.markercluster/dist/MarkerCluster.css" />
-		<link rel="stylesheet" href="lib/Leaflet.markercluster/dist/MarkerCluster.Default.css" />
-		<script src="lib/jquery-1.8.3.min.js"></script>
-		<script src="lib/leaflet-0.4.5/dist/leaflet.js"></script>
-		<script src="lib/Leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+		<title>OGC-CHISP</title>
+		<%= stylesheet_link_tag    "application", :media => "all" %>
+		<%= javascript_include_tag "application" %>
+		<%= csrf_meta_tags %>
 	</head>
 	<body>
+		<div class="navbar navbar-inverse navbar-fixed-top">
+			<div class="navbar-inner">
+				<div class="container">
+					<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse"> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </a>
+					<a class="brand" href="<%= root_url%>">Project name</a>
+					<div class="nav-collapse collapse">
+						<ul class="nav">
+							<li class="active">
+								<a href="#">Home</a>
+							</li>
+							<li>
+								<a href="#about">About</a>
+							</li>
+							<li>
+								<a href="#contact">Contact</a>
+							</li>
+						</ul>
+					</div><!--/.nav-collapse -->
+				</div>
+			</div>
+		</div>
+		<div id="wrap">
+			<div class="container">
+				<%= yield %>
+			</div>
+			<footer>
+				<div class="container">
 
-		<%= yield %>
-
+				</div>
+			</footer>
+		</div>
 	</body>
 </html>
