@@ -14,21 +14,22 @@ Future requests to the serivce will need to include the API key as a query strin
 ####JSON Definition
 ````
 {
-	"stationId": "MH6654",
+	"monitoringPointId": "MH6654",
 	"point": [51, -116],
-	"recordedAt": "2010-04-20T20:08:21",
-	"property": "level",
-	"value": 20,
-	"units": 
+	"time": "2010-04-20T20:08:21",
+	"observedProperty": "GageHeight",
+	"value": 1.35,
+	"uom": "ft"
 }	
 ````
 
 
-- **stationId**: String identifier given to the station by the station authority.
+- **monitoringPointId**: String identifier given to the station by the station authority.
 - **point**: Latitude and Longitude of station in [lat, lon] format. Implied CRS is WGS84 in lat/lon.
-- **recordedAt**: Datetime of recording in YYYY-MM-DDTHH:MM:SS formt.
-- **property**: String representing name of property observed.
+- **time**: Datetime of observation in YYYY-MM-DDTHH:MM:SS formt.
+- **observedProperty**: String representing name of property observed.
 - **value**: Numeric value of property observed.
+- **uom**: Units of measurement.
 
 ####URL Definition and Operations
 Replace YOUR_API_KEY with API key retreived from generate key operation described above.
