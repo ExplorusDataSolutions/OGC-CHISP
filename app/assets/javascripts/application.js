@@ -13,7 +13,6 @@
 //= require jquery
 //= require jquery_ujs
 //= require bootstrap
-//= require_tree .
-
 //= require leaflet
+//= require leaflet.config
 //= require leaflet.markercluster
