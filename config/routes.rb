@@ -3,8 +3,19 @@ module OGCChisp
     def initialize(request_param)
       @request_param = request_param;
     end
+
     def matches?(request)
       request.query_parameters["request"] == @request_param
+    end
+  end
+
+  class Constraint2
+    def initialize(&block)
+      @block = block;
+    end
+
+    def matches?(request)
+      @block.call(request)
     end
   end
 end
@@ -19,6 +30,20 @@ OGCChisp::Application.routes.draw do
   match 'test.csw' => "service#test_csw"
   match '404' => "service#not_implemented_exception"
   match 'proxy' => "service#proxy"
+
+  match '/svc/cache/util' => 'service#last_value_util'
+  match '/svc/cache/last-value' => 'service#last_value_get_json', :via => :get,
+    :constraints => OGCChisp::Constraint2.new { |request|
+      request.query_parameters['id'] =~ /\d+/
+    }
+
+  match '/svc/cache/last-value' => 'service#last_values_json', :via => :get
+  match '/svc/cache/last-value' => 'service#last_value_create', :via => :post
+  match '/svc/cache/last-value' => 'service#last_value_update_json', :via => :put
+  match '/svc/cache/last-value' => 'service#last_value_delete', :via => :delete
+
+  match '/svc/cache/last-value/:monitoringPointId' => 'service#last_value_get_xml', :via => :get
+
   root :to => "service#index"
   # The priority is based upon order of creation:
   # first created -> highest priority.

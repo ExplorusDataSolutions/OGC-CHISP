@@ -1,0 +1,128 @@
+<div class="container">
+	<table id="lv_list" class="table table-hover">
+		<tr>
+			<th>Monitoring Point Id</th>
+			<th>Point</th>
+			<th>Time</th>
+			<th>Observed Property</th>
+			<th>Value</th>
+			<th>uom</th>
+			<th>Operation</th>
+		</tr>
+		<% @lv_all.each do |lv| %>
+		<tr>
+			<td><%= lv.monitoringPointId%></td>
+			<td><%= lv.point%></td>
+			<td><%= lv.time%></td>
+			<td><%= lv.observedProperty%></td>
+			<td><%= lv.value%></td>
+			<td><%= lv.uom%></td>
+			<td><a href="/svc/cache/last-value?monitoringPointId=<%= lv.monitoringPointId%>">JSON</a> | <a href="/svc/cache/last-value/<%= lv.monitoringPointId%>">XML</a> | <a href="#<%= lv.id%>">Update</a> | <a href="#<%= lv.id%>">Delete</a></td>
+		</tr>
+		<% end %>
+	</table>
+</div>
+
+<div class="container">
+	<div id="error" class="error"></div>
+	<textarea id="data-create" rows="9" style="width: 500px">{
+  "monitoringPointId": "MH6654",
+  "point": "51 -116",
+  "time": "2010-04-20T20:08:21",
+  "observedProperty": "GageHeight",
+  "value": 1.35,
+  "uom": "ft"
+}
+</textarea>
+	<button id="create">
+		Create
+	</button>
+	<button id="cancel" class="hide">
+		Cancel
+	</button>
+</div>
+<script type="text/javascript">
+	function edit(id) {
+		$.ajax({
+			type : 'GET',
+			url : '/svc/cache/last-value',
+			data : {
+				id : id
+			},
+			success : function(json) {
+				if (json.error) {
+					$('#error').html(json.error)
+					$('#create').html('Create');
+					$('#cancel').hide();
+				} else {
+					delete json.created_at
+					delete json.updated_at
+					$('#data-create').val(JSON.stringify(json, null, '  '));
+					$('#create').html('Update');
+					$('#cancel').show();
+				}
+			},
+			error : function() {
+				location.href = location.href.replace(/#.*$/, '')
+			}
+		})
+	}
+
+	function delt(id) {
+		$.ajax({
+			type : 'DELETE',
+			url : '/svc/cache/last-value?id=' + id,
+			success : function(json) {
+				document.write('<pre>' + JSON.stringify(json, null, '  ') + '</pre>')
+			}
+		})
+	}
+
+
+	jQuery(document).ready(function($) {
+		$('#lv_list').click(function(e) {
+			var el = e.target, m;
+			if (el.tagName == 'A' && ( m = el.href.match(/#(\d+)/))) {
+				if (el.innerText == 'Update') {
+					edit(m[1]);
+				}
+				if (el.innerText == 'Delete') {
+					delt(m[1])
+				}
+			}
+		})
+		$('#create').click(function() {
+			var data = $('#data-create').val();
+			var json = JSON.parse(data);
+
+			$.ajax({
+				type : json.id ? 'PUT' : 'POST',
+				url : '/svc/cache/last-value',
+				data : data.replace(/\n/, ''),
+				success : function(json) {
+					document.write('<pre>' + JSON.stringify(json, null, '  ') + '</pre>')
+				},
+				contentType : 'text/json'
+			})
+		})
+		$('#cancel').click(function() {
+			location.href = location.href.replace(/#.*$/, '')
+		})
+		var m;
+		if ( m = location.hash.match(/#(\d+)$/)) {
+			edit(m[1])
+		} else {
+			var data = $('#data-create').val();
+			var json = JSON.parse(data);
+			var dt = new Date;
+			var y = dt.getFullYear();
+			var m = dt.getMonth() + 1, m = m < 10 ? '0' + m : m;
+			var d = dt.getDate(), d = d < 10 ? '0' + d : d;
+			var h = dt.getHours(), h = h < 10 ? '0' + h : h;
+			var i = dt.getMinutes(), i = i < 10 ? '0' + i : i;
+			var s = dt.getSeconds(), s = s < 10 ? '0' + s : s;
+			json.time = y + '-' + m + '-' + d + 'T' + h + ':' + i + ':' + s + 'Z';
+			$('#data-create').val(JSON.stringify(json, null, '  '));
+		}
+	})
+</script>

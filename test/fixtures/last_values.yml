@@ -1,0 +1,17 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  monitoringPointId: MyString
+  point: 
+  time: 2012-12-18 22:11:50
+  observedProperty: MyString
+  value: 1.5
+  uom: MyString
+
+two:
+  monitoringPointId: MyString
+  point: 
+  time: 2012-12-18 22:11:50
+  observedProperty: MyString
+  value: 1.5
+  uom: MyString
