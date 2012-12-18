@@ -6,14 +6,14 @@
 	L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
 
 	jQuery(function($) {
-		/*$.ajax({
+		$.ajax({
 			url : '/proxy',
 			data : {
 				url : ['http://198.103.103.7/GinService/sos?', //
 				'REQUEST=GetFeatureOfInterest', //
 				'&VERSION=2.0.0', //
 				'&SERVICE=SOS', //
-				'&spatialFilter=om:featureOfInterest/* /sams:shape,-101.2,49,-99.5,50.1', //
+				'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.2,49,-99.5,50.1', //
 				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0']//
 				.join('')
 			},
@@ -30,7 +30,7 @@
 
 				map.addLayer(markers);
 			}
-		});*/
+		});
 
 		$.ajax({
 			url : '/proxy',
