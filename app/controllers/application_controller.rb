@@ -1,6 +1,11 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery
   #
+  def csw_home_url
+    @csw_home_url ||= Rails.application.config.csw_home_url
+  end
+
+  #
   def csw_service_url
     @csw_service_url ||= Rails.application.config.csw_service_url
   end

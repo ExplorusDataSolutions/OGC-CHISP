@@ -40,17 +40,17 @@ OGCChisp::Application.routes.draw do
   match '/svc/cache/last-value/:monitoringPointId' => 'cache#get_last_value', :via => :get
   
   # csw controller
-  match '/svc/csw' => "service#index"
-  match '/csw/test' => "service#test_csw"
-  match '/proxy' => "service#proxy"
-  match '/csw' => "service#get_capabilities", :constraints => OGCChisp::Constraint.new("GetCapabilities")
-  match '/csw' => "service#get_domain", :constraints => OGCChisp::Constraint.new("GetDomain")
-  match '/csw' => "service#get_records", :constraints => OGCChisp::Constraint.new("GetRecords")
-  match '/csw' => "service#get_record_by_id", :constraints => OGCChisp::Constraint.new("GetRecordById")
-  match '/csw' => "service#describe_record", :constraints => OGCChisp::Constraint.new("DescribeRecord")
-  match '/csw' => "service#check_post", :via => [:post, :options]
+  match '/svc/csw' => "csw#index"
+  match '/csw/test' => "csw#test_csw"
+  match '/proxy' => "csw#proxy"
+  match '/csw' => "csw#get_capabilities", :constraints => OGCChisp::Constraint.new("GetCapabilities")
+  match '/csw' => "csw#get_domain", :constraints => OGCChisp::Constraint.new("GetDomain")
+  match '/csw' => "csw#get_records", :constraints => OGCChisp::Constraint.new("GetRecords")
+  match '/csw' => "csw#get_record_by_id", :constraints => OGCChisp::Constraint.new("GetRecordById")
+  match '/csw' => "csw#describe_record", :constraints => OGCChisp::Constraint.new("DescribeRecord")
+  match '/csw' => "csw#check_post", :via => [:post, :options]
 
-  match '/404' => "service#not_implemented_exception"
+  match '/404' => "csw#not_implemented_exception"
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

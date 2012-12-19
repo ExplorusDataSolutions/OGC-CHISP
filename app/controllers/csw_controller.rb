@@ -1,6 +1,6 @@
-class ServiceController < ApplicationController
+class CswController < ApplicationController
   def index
-    redirect_to csw_service_url
+    redirect_to csw_home_url
   end
 
   def proxy

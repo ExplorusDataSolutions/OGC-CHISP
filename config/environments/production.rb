@@ -65,5 +65,6 @@ OGCChisp::Application.configure do
   # with SQLite, MySQL, and PostgreSQL)
   # config.active_record.auto_explain_threshold_in_seconds = 0.5
   
+  config.csw_home_url = 'http://chisp.elasticbeanstalk.com'
   config.csw_service_url = 'http://chisp.elasticbeanstalk.com/srv/en/csw'
 end
