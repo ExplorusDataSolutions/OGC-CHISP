@@ -44,6 +44,8 @@ OGCChisp::Application.routes.draw do
 
   match '/svc/cache/last-value/:monitoringPointId' => 'service#last_value_get_xml', :via => :get
 
+  match '/map' => 'service#map'
+
   root :to => "service#index"
   # The priority is based upon order of creation:
   # first created -> highest priority.

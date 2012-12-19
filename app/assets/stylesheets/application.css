@@ -11,20 +11,10 @@
  *= require_self
  *= require_tree .
  *= require bootstrap
+ *= require bootstrap-responsive
  *= require leaflet
  *= require leaflet.ie
  *= require MarkerCluster
  *= require MarkerCluster.Default
  *= require MarkerCluster.Default.ie
  */
-
-/* Some simple styles for a basic start */
-html, body {
-	height: 100%;
-}
-#wrap {
-	position: absolute;
-	top: 42px;
-	bottom: 0px;
-	width: 100%;
-}

@@ -2,6 +2,10 @@ class ServiceController < ApplicationController
   def index
 
   end
+  
+  def map
+    
+  end
 
   def proxy
     self.content_type = "application/xml"
