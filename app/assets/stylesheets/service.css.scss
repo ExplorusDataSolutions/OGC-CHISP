@@ -2,10 +2,13 @@
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
 
-html, body {
-  height: 100%;
+@media (max-width: 979px) {
+  .navbar-fixed-top {
+    margin-bottom: 0px;
+  }
 }
 
-body {
-  padding-top: 41px;
+.container-fluid {
+  padding-left: 0;
+  padding-right: 0;
 }
