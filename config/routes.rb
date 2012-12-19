@@ -31,7 +31,7 @@ OGCChisp::Application.routes.draw do
   match '404' => "service#not_implemented_exception"
   match 'proxy' => "service#proxy"
 
-  match '/svc/cache/util' => 'service#last_value_util'
+  match '/svc/cache' => 'service#last_value_util'
   match '/svc/cache/last-value' => 'service#last_value_get_json', :via => :get,
     :constraints => OGCChisp::Constraint2.new { |request|
       request.query_parameters['id'] =~ /\d+/
