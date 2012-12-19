@@ -14,16 +14,16 @@
 					<a class="brand" href="<%= root_url%>">OGC-CHISP</a>
 					<div class="nav-collapse collapse">
 						<ul class="nav pull-right">
-							<li class="active">
+							<li<%=raw ' class="active"' if params[:controller] == "home"%>>
 								<a href="/">Home</a>
 							</li>
-							<li>
+							<li<%=raw ' class="active"' if params[:controller] == "map"%>>
 								<a href="/map">Map</a>
 							</li>
-							<li>
+							<li<%=raw ' class="active"' if params[:controller] == "cache"%>>
 								<a href="/svc/cache">Cache</a>
 							</li>
-							<li>
+							<li<%=raw ' class="active"' if params[:controller] == "csw"%>>
 								<a href="/svc/csw">Catalog</a>
 							</li>
 						</ul>

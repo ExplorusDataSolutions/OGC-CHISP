@@ -21,32 +21,36 @@ module OGCChisp
 end
 
 OGCChisp::Application.routes.draw do
-  match 'csw' => "service#get_capabilities", :constraints => OGCChisp::Constraint.new("GetCapabilities")
-  match 'csw' => "service#get_domain", :constraints => OGCChisp::Constraint.new("GetDomain")
-  match 'csw' => "service#get_records", :constraints => OGCChisp::Constraint.new("GetRecords")
-  match 'csw' => "service#get_record_by_id", :constraints => OGCChisp::Constraint.new("GetRecordById")
-  match 'csw' => "service#describe_record", :constraints => OGCChisp::Constraint.new("DescribeRecord")
-  match 'csw' => "service#check_post", :via => [:post, :options]
-  match 'test.csw' => "service#test_csw"
-  match '404' => "service#not_implemented_exception"
-  match 'proxy' => "service#proxy"
-
-  match '/svc/cache' => 'service#last_value_util'
-  match '/svc/cache/last-value' => 'service#last_value_get_json', :via => :get,
+  # home controller
+  root :to => "home#index"
+  
+  # map controller
+  match '/map' => 'map#index'
+  
+  # cache controller
+  match '/svc/cache' => 'cache#index'
+  match '/svc/cache/last-value' => 'cache#get_value_by_id', :via => :get,
     :constraints => OGCChisp::Constraint2.new { |request|
       request.query_parameters['id'] =~ /\d+/
     }
+  match '/svc/cache/last-value' => 'cache#get_values', :via => :get
+  match '/svc/cache/last-value' => 'cache#create_value', :via => :post
+  match '/svc/cache/last-value' => 'cache#update_value', :via => :put
+  match '/svc/cache/last-value' => 'cache#delete_value', :via => :delete
+  match '/svc/cache/last-value/:monitoringPointId' => 'cache#get_last_value', :via => :get
+  
+  # csw controller
+  match '/svc/csw' => "service#index"
+  match '/csw/test' => "service#test_csw"
+  match '/proxy' => "service#proxy"
+  match '/csw' => "service#get_capabilities", :constraints => OGCChisp::Constraint.new("GetCapabilities")
+  match '/csw' => "service#get_domain", :constraints => OGCChisp::Constraint.new("GetDomain")
+  match '/csw' => "service#get_records", :constraints => OGCChisp::Constraint.new("GetRecords")
+  match '/csw' => "service#get_record_by_id", :constraints => OGCChisp::Constraint.new("GetRecordById")
+  match '/csw' => "service#describe_record", :constraints => OGCChisp::Constraint.new("DescribeRecord")
+  match '/csw' => "service#check_post", :via => [:post, :options]
 
-  match '/svc/cache/last-value' => 'service#last_values_json', :via => :get
-  match '/svc/cache/last-value' => 'service#last_value_create', :via => :post
-  match '/svc/cache/last-value' => 'service#last_value_update_json', :via => :put
-  match '/svc/cache/last-value' => 'service#last_value_delete', :via => :delete
-
-  match '/svc/cache/last-value/:monitoringPointId' => 'service#last_value_get_xml', :via => :get
-
-  match '/map' => 'service#map'
-
-  root :to => "service#index"
+  match '/404' => "service#not_implemented_exception"
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
