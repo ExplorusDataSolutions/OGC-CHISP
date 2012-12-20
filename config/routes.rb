@@ -28,6 +28,7 @@ OGCChisp::Application.routes.draw do
   match '/map' => 'map#index'
   
   # cache controller
+  match '/svc/generate-key' => 'cache#api_key'
   match '/svc/cache' => 'cache#index'
   match '/svc/cache/last-value' => 'cache#get_value_by_id', :via => :get,
     :constraints => OGCChisp::Constraint2.new { |request|

@@ -3,6 +3,15 @@ class CacheController < ApplicationController
     @lv_all = LastValue.all
   end
 
+  def api_key
+    key = UUIDTools::UUID.random_create.to_s
+
+    @key = ApiKey.new(:key => key)
+    @key.save
+
+    render :json => key
+  end
+
   def get_value_by_id
     id = params[:id]
     @lv = LastValue.find(id)
