@@ -1,3 +1,28 @@
+<% if @key.nil? or @invalid_key %>
+<div style="margin: 100px 200px; text-align: center">
+	<form action="" method="get" class="form-search">
+		<fieldset>
+			<label>Input your API key:</label>
+			<input class="input-small" type="text" name="key" value="<%= @key %>" maxlength="36" placeholder="api key..." style="width: 300px" />
+			<button type="submit" class="btn">
+				Submit
+			</button>
+		</fieldset>
+	</form>
+	<% if @invalid_key %>
+	<div class="alert alert-error">
+		<h4>Warning!</h4>
+		Invalid API key: <strong><%= @key %></strong>
+	</div>
+	<% end %>
+	<select onchange="jQuery('form input').val(jQuery(this).val())">
+		<option> - Available API keys - </option>
+		<% @key_all.each do |a|%>
+		<option><%= a.key%></option>
+		<% end %>
+	</select>
+</div>
+<% else %>
 <div class="container">
 	<table id="lv_list" class="table table-hover">
 		<tr>
@@ -17,7 +42,7 @@
 			<td><%= lv.observedProperty%></td>
 			<td><%= lv.value%></td>
 			<td><%= lv.uom%></td>
-			<td><a href="/svc/cache/last-value?monitoringPointId=<%= lv.monitoringPointId%>">JSON</a> | <a href="/svc/cache/last-value/<%= lv.monitoringPointId%>">XML</a> | <a href="#<%= lv.id%>">Update</a> | <a href="#<%= lv.id%>">Delete</a></td>
+			<td><a href="/svc/cache/last-value?key=<%= @key%>&monitoringPointId=<%= lv.monitoringPointId%>">JSON</a> | <a href="/svc/cache/last-value/<%= lv.monitoringPointId%>?key=<%= @key%>">XML</a> | <a href="#<%= lv.id%>">Update</a> | <a href="#<%= lv.id%>">Delete</a></td>
 		</tr>
 		<% end %>
 	</table>
@@ -41,19 +66,15 @@
 		Cancel
 	</button>
 </div>
-<script type="text/javascript">
+<script>var api_key = '<%= @key%>'</script>
+<script>
 	function edit(id) {
 		$.ajax({
 			type : 'GET',
-			url : '/svc/cache/last-value',
-			data : {
-				id : id
-			},
+			url : '/svc/cache/last-value?key=' + api_key + '&id=' + id,
 			success : function(json) {
 				if (json.error) {
-					$('#error').html(json.error)
-					$('#create').html('Create');
-					$('#cancel').hide();
+					location.href = location.href.replace(/#.*$/, '')
 				} else {
 					delete json.created_at
 					delete json.updated_at
@@ -71,7 +92,7 @@
 	function delt(id) {
 		$.ajax({
 			type : 'DELETE',
-			url : '/svc/cache/last-value?id=' + id,
+			url : '/svc/cache/last-value?key=' + api_key + '&id=' + id,
 			success : function(json) {
 				document.write('<pre>' + JSON.stringify(json, null, '  ') + '</pre>')
 			}
@@ -97,7 +118,7 @@
 
 			$.ajax({
 				type : json.id ? 'PUT' : 'POST',
-				url : '/svc/cache/last-value',
+				url : '/svc/cache/last-value?key=' + api_key,
 				data : data.replace(/\n/, ''),
 				success : function(json) {
 					document.write('<pre>' + JSON.stringify(json, null, '  ') + '</pre>')
@@ -126,3 +147,4 @@
 		}
 	})
 </script>
+<% end %>

@@ -1,5 +1,5 @@
 class LastValue < ActiveRecord::Base
-  attr_accessible :monitoringPointId, :observedProperty, :point, :time, :uom, :value
+  attr_accessible :monitoringPointId, :observedProperty, :point, :time, :uom, :value, :api_key
   def to_json
     ActiveSupport::JSON.encode(self)
   end
