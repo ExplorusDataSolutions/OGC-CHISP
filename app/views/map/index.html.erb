@@ -9,23 +9,44 @@
 		var boundsList = [];
 
 		// Use MapBox as base layer
-		L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
+		var baseLayer = L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
 
-		L.tileLayer.wms("http://ows.geobase.ca/wms/geobase_en", {
-			layers : 'nhn:hydrography',
+		// nhn:hydrography:hydro1m_l only display at zoom 9
+		var overlay = L.tileLayer.wms("http://ows.geobase.ca/wms/geobase_en", {
+			layers : 'nhn:hydrography:hydro1m_l',
 			format : 'image/png',
 			transparent : true
 		}).addTo(map);
 
+		var controlLayers = L.control.layers({
+			"Base" : baseLayer
+		}, {
+			"Overlays" : overlay
+		}).addTo(map);
+
+		map.on('zoomend', function(e) {
+			if (map.getZoom() != 9) {
+				map.removeLayer(overlay);
+				controlLayers.removeLayer(overlay);
+			} else {
+				map.addLayer(overlay);
+				controlLayers.addOverlay(overlay, 'Overlay');
+			}
+		})
+
 		map.on('click', function(e) {
+			if (!map.hasLayer(overlay) || map.getZoom() != 9) {
+				return;
+			}
+
 			var url = 'http://ows.geobase.ca/wms/geobase_en';
 			var data = {
 				REQUEST : "GetFeatureInfo",
 				EXCEPTIONS : "application/vnd.ogc.se_xml",
 				BBOX : map.getBounds().toBBoxString(),
 				SERVICE : "WMS",
-				QUERY_LAYERS : 'nhn:hydrography',
-				Layers : 'nhn:hydrography',
+				QUERY_LAYERS : 'nhn:hydrography:hydro1m_l',
+				Layers : 'nhn:hydrography:hydro1m_l',
 				VERSION : '1.1.1',
 				SRS : 'EPSG:4269',
 				WIDTH : map.getSize().x,
@@ -50,7 +71,7 @@
 				}
 			});
 		});
-
+		
 		$.ajax({
 			url : '/proxy',
 			data : {
