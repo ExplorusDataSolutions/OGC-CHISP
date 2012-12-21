@@ -6,6 +6,7 @@
 
 		// Inital map location
 		var map = L.map('map').setView([51, -110], 6);
+		var boundsList = [];
 
 		// Use MapBox as base layer
 		L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
@@ -24,14 +25,19 @@
 			success : function(responseXML) {
 				var xml = responseXML, point, description, identifier;
 				var markers = new L.MarkerClusterGroup();
+				var bounds = new L.LatLngBounds();
 
 				$(xml).find('featureMember').each(function(index, element) {
 					point = $(element).find('pos')[0].textContent.split(' ');
 					description = $(element).find('description')[0].textContent;
 					identifier = $(element).find('identifier')[0].textContent;
 					markers.addLayer(new L.Marker(point).bindPopup(description + ' (' + identifier + ')'));
+					
+					bounds.extend(L.latLng(point));
 				})
 
+				boundsList.push(bounds);
+				fitBoundsList();
 				map.addLayer(markers);
 			}
 		});
@@ -50,16 +56,60 @@
 			success : function(responseXML) {
 				var xml = responseXML, point, description, identifier;
 				var markers = new L.MarkerClusterGroup();
+				var bounds = new L.LatLngBounds();
 
 				$(xml).find('featureMember').each(function(index, element) {
 					point = $(element).find('pos')[0].textContent.split(' ');
 					description = $(element).find('description')[0].textContent;
 					identifier = $(element).find('identifier')[0].textContent;
 					markers.addLayer(new L.Marker(point).bindPopup(description + ' (' + identifier + ')'));
+					
+					bounds.extend(L.latLng(point));
 				})
 
+				boundsList.push(bounds);
+				fitBoundsList();
 				map.addLayer(markers);
 			}
 		});
+		
+		$.ajax({
+			url : '/proxy',
+			data : {
+				url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature'
+			},
+			success : function(responseXML) {
+				var xml = responseXML, point, d, identifier;
+				var markers = new L.MarkerClusterGroup();
+				var bounds = new L.LatLngBounds();
+
+				$(xml).find('member').each(function(index, element) {
+					point = $(element).find('pos')[0].textContent.split(' ');
+					d = $(element).find('CharacterString')[0].textContent;
+					identifier = $(element).find('name')[0].textContent;
+					markers.addLayer(new L.Marker(point).bindPopup(d + ' (' + identifier + ')'));
+					
+					bounds.extend(L.latLng(point));
+				})
+
+				boundsList.push(bounds);
+				fitBoundsList();
+				map.addLayer(markers);
+			}
+		});
+		
+		
+		function fitBoundsList() {
+			if (boundsList.length == 3) {
+				var b = new L.LatLngBounds();
+				for (var i = 0, bounds; bounds = boundsList[i++];) {
+					b.extend(bounds);
+				}
+				
+				//map.fitBounds(bounds);
+				var zoom = map.getBoundsZoom(b);
+				map.setView(b.getCenter(), zoom - 1);
+			}
+		}
 	})
 </script>
