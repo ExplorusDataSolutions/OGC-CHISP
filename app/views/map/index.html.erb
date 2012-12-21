@@ -11,6 +11,46 @@
 		// Use MapBox as base layer
 		L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
 
+		L.tileLayer.wms("http://ows.geobase.ca/wms/geobase_en", {
+			layers : 'nhn:hydrography',
+			format : 'image/png',
+			transparent : true
+		}).addTo(map);
+
+		map.on('click', function(e) {
+			var url = 'http://ows.geobase.ca/wms/geobase_en';
+			var data = {
+				REQUEST : "GetFeatureInfo",
+				EXCEPTIONS : "application/vnd.ogc.se_xml",
+				BBOX : map.getBounds().toBBoxString(),
+				SERVICE : "WMS",
+				QUERY_LAYERS : 'nhn:hydrography',
+				Layers : 'nhn:hydrography',
+				VERSION : '1.1.1',
+				SRS : 'EPSG:4269',
+				WIDTH : map.getSize().x,
+				HEIGHT : map.getSize().y,
+				x : e.latlng.lat,
+				y : e.latlng.lng
+			};
+			var kvp = [];
+			for (var i in data) {
+				kvp.push(i + '=' + data[i]);
+			}
+			url += '?' + kvp.join('&');
+
+			$.ajax({
+				url : '/proxy',
+				data : {
+					url : url
+				},
+				success : function(xml, status, response) {
+					var e = $(xml).find('ServiceException')
+					alert('Your request is:\n\n' + url + '\n\n' + (e.length ? 'However, we have an exception:\n' + e[0].textContent : ''))
+				}
+			});
+		});
+
 		$.ajax({
 			url : '/proxy',
 			data : {
@@ -32,7 +72,7 @@
 					description = $(element).find('description')[0].textContent;
 					identifier = $(element).find('identifier')[0].textContent;
 					markers.addLayer(new L.Marker(point).bindPopup(description + ' (' + identifier + ')'));
-					
+
 					bounds.extend(L.latLng(point));
 				})
 
@@ -63,7 +103,7 @@
 					description = $(element).find('description')[0].textContent;
 					identifier = $(element).find('identifier')[0].textContent;
 					markers.addLayer(new L.Marker(point).bindPopup(description + ' (' + identifier + ')'));
-					
+
 					bounds.extend(L.latLng(point));
 				})
 
@@ -72,7 +112,7 @@
 				map.addLayer(markers);
 			}
 		});
-		
+
 		$.ajax({
 			url : '/proxy',
 			data : {
@@ -88,7 +128,7 @@
 					d = $(element).find('CharacterString')[0].textContent;
 					identifier = $(element).find('name')[0].textContent;
 					markers.addLayer(new L.Marker(point).bindPopup(d + ' (' + identifier + ')'));
-					
+
 					bounds.extend(L.latLng(point));
 				})
 
@@ -97,19 +137,19 @@
 				map.addLayer(markers);
 			}
 		});
-		
-		
+
 		function fitBoundsList() {
 			if (boundsList.length == 3) {
 				var b = new L.LatLngBounds();
-				for (var i = 0, bounds; bounds = boundsList[i++];) {
+				for (var i = 0, bounds; bounds = boundsList[i++]; ) {
 					b.extend(bounds);
 				}
-				
+
 				//map.fitBounds(bounds);
 				var zoom = map.getBoundsZoom(b);
 				map.setView(b.getCenter(), zoom - 1);
 			}
 		}
+
 	})
 </script>
