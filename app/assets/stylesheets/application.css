@@ -26,3 +26,11 @@ html, body {
 body {
   padding-top: 41px;
 }
+
+ul.nav li.dropdown:hover > ul.dropdown-menu {
+  display: block;
+}
+
+.nav .dropdown-menu {
+  margin-top: 0px;
+}
