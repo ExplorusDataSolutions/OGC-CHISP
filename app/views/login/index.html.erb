@@ -1,0 +1,22 @@
+<div style="margin: 100px 200px; text-align: center">
+	<% unless @is_valid_email %>
+	<form action="" method="post" class="form-search">
+		<fieldset>
+			<label>Input your email:</label>
+			<input class="input-small" type="text" name="email" value="<%= @email %>" maxlength="255" placeholder="somebody@example.com" style="width: 300px" />
+			<button type="submit" class="btn">
+				Login
+			</button>
+		</fieldset>
+	</form>
+	<div class="alert alert-error">
+		<h4>Warning!</h4>
+		Invalid email: <strong><%= @email %></strong>
+	</div>
+	<% else %>
+	<div class="alert alert-success">
+		<h4>Welcome!</h4>
+		<strong><%= @email %></strong>
+	</div>
+	<% end %>
+</div>
