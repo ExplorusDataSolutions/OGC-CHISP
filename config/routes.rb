@@ -24,6 +24,8 @@ OGCChisp::Application.routes.draw do
   # home controller
   root :to => "home#index"
   
+  match "/login" => 'login#index'
+
   # map controller
   match '/map' => 'map#index'
   

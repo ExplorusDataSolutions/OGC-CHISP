@@ -120,6 +120,7 @@ DEPENDENCIES
   compass-rails
   jquery-rails
   libxml-ruby
+  mail
   rails (= 3.2.8)
   sass-rails (~> 3.2.3)
   sqlite3
