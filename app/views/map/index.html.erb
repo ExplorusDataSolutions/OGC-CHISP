@@ -4,9 +4,59 @@
 		$('#map').parent().removeClass('container');
 		$('#map').css('height', $(window).height() - $('#map').position().top - 4 + 'px');
 
+		/**
+		 * This is to remove the zoom limit of the whole map caused by the zoom limit
+		 *  of a overlay layer for performance
+		 */
+		var Map = L.Map.extend({
+			_limitZoom: function (zoom) {
+				return zoom;
+			}
+		});
+		
+		/**
+		 * Customize the cluster marker size
+		 */
+		var MarkerClusterGroup = L.MarkerClusterGroup.extend({
+			options: {
+				maxClusterRadius: 50
+			},
+			_defaultIconCreateFunction: function(cluster) {
+				var childCount = cluster.getChildCount();
+
+				var c = ' marker-cluster-';
+				if (childCount < 10) {
+					c += 'small';
+				} else if (childCount < 100) {
+					c += 'medium';
+				} else {
+					c += 'large';
+				}
+
+				return new L.DivIcon({
+					html: childCount,
+					className: 'marker-cluster' + c,
+					iconSize: new L.Point(12, 12)
+				});
+			}
+		});
+		
+		/**
+		 * Customize the circle style
+		 */
+		CircleMarker = L.CircleMarker.extend({
+			options: {
+				radius: 4,
+				weight: 2,
+				color: '#00ffff',
+				opacity: 1,
+				fill: false, // L.Circle.options.fill = true
+			},
+			setOpacity: function(){}
+		});
+
 		// Inital map location
-		var map = L.map('map').setView([51, -110], 6);
-		var boundsList = [];
+		var map = new Map('map').setView([51, -110], 6);
 
 		// Use MapBox as base layer
 		var baseLayer = L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
@@ -15,63 +65,76 @@
 		var overlay = L.tileLayer.wms("http://ows.geobase.ca/wms/geobase_en", {
 			layers : 'nhn:hydrography:hydro1m_l',
 			format : 'image/png',
-			transparent : true
+			transparent : true,
+			// force the layer only displayed at zoom level 9
+			maxZoom : 9,
+			minZoom : 9,
 		}).addTo(map);
-
-		var controlLayers = L.control.layers({
-			"Base" : baseLayer
-		}, {
-			"Overlays" : overlay
-		}).addTo(map);
-
-		map.on('zoomend', function(e) {
-			if (map.getZoom() != 9) {
-				map.removeLayer(overlay);
-				controlLayers.removeLayer(overlay);
-			} else {
-				map.addLayer(overlay);
-				controlLayers.addOverlay(overlay, 'Overlay');
-			}
-		})
-
+		
+		
+		/**
+		 * WMS query
+		 * /
 		map.on('click', function(e) {
-			if (!map.hasLayer(overlay) || map.getZoom() != 9) {
-				return;
-			}
-
-			var url = 'http://ows.geobase.ca/wms/geobase_en';
+			var url = 'http://ngwd-bdnes.cits.nrcan.gc.ca/service/ngwds/en/wms/ngwd-wms/ec_pilot_wms';
 			var data = {
 				REQUEST : "GetFeatureInfo",
 				EXCEPTIONS : "application/vnd.ogc.se_xml",
 				BBOX : map.getBounds().toBBoxString(),
 				SERVICE : "WMS",
-				QUERY_LAYERS : 'nhn:hydrography:hydro1m_l',
-				Layers : 'nhn:hydrography:hydro1m_l',
+				QUERY_LAYERS : 'w_level',
+				Layers : 'w_level',
 				VERSION : '1.1.1',
-				SRS : 'EPSG:4269',
+				SRS : 'EPSG:4326',
 				WIDTH : map.getSize().x,
 				HEIGHT : map.getSize().y,
-				x : e.latlng.lat,
-				y : e.latlng.lng
+				y : e.latlng.lat,
+				x : e.latlng.lng,
+				INFO_FORMAT : 'text/xml'
 			};
 			var kvp = [];
 			for (var i in data) {
 				kvp.push(i + '=' + data[i]);
 			}
 			url += '?' + kvp.join('&');
-
+			
 			$.ajax({
 				url : '/proxy',
 				data : {
 					url : url
 				},
 				success : function(xml, status, response) {
-					var e = $(xml).find('ServiceException')
-					alert('Your request is:\n\n' + url + '\n\n' + (e.length ? 'However, we have an exception:\n' + e[0].textContent : ''))
+					alert(url + '\n\n-----' + response.responseText)
 				}
 			});
 		});
+		/**/
 		
+		
+		$.ajax({
+			url : '/proxy',
+			data : {
+				url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
+			},
+			success : function(responseXML) {
+				var xml = responseXML, point, d, identifier;
+				var markers = new MarkerClusterGroup();
+				var bounds = new L.LatLngBounds();
+
+				$(xml).find('member').each(function(index, element) {
+					point = $(element).find('pos')[0].textContent.split(' ');
+					d = $(element).find('CharacterString')[0].textContent;
+					identifier = $(element).find('name')[0].textContent;
+					markers.addLayer(new CircleMarker(point).bindPopup(d + ' (' + identifier + ')'));
+
+					bounds.extend(L.latLng(point));
+				})
+
+				map.addLayer(markers);
+				map.setView(bounds.getCenter(), map.getBoundsZoom(bounds));
+			}
+		});
+
 		$.ajax({
 			url : '/proxy',
 			data : {
@@ -85,20 +148,18 @@
 			},
 			success : function(responseXML) {
 				var xml = responseXML, point, description, identifier;
-				var markers = new L.MarkerClusterGroup();
+				var markers = new MarkerClusterGroup();
 				var bounds = new L.LatLngBounds();
 
 				$(xml).find('featureMember').each(function(index, element) {
 					point = $(element).find('pos')[0].textContent.split(' ');
 					description = $(element).find('description')[0].textContent;
 					identifier = $(element).find('identifier')[0].textContent;
-					markers.addLayer(new L.Marker(point).bindPopup(description + ' (' + identifier + ')'));
+					markers.addLayer(new CircleMarker(point).bindPopup(description + ' (' + identifier + ')'));
 
 					bounds.extend(L.latLng(point));
 				})
 
-				boundsList.push(bounds);
-				fitBoundsList();
 				map.addLayer(markers);
 			}
 		});
@@ -116,61 +177,20 @@
 			},
 			success : function(responseXML) {
 				var xml = responseXML, point, description, identifier;
-				var markers = new L.MarkerClusterGroup();
+				var markers = new MarkerClusterGroup();
 				var bounds = new L.LatLngBounds();
 
 				$(xml).find('featureMember').each(function(index, element) {
 					point = $(element).find('pos')[0].textContent.split(' ');
 					description = $(element).find('description')[0].textContent;
 					identifier = $(element).find('identifier')[0].textContent;
-					markers.addLayer(new L.Marker(point).bindPopup(description + ' (' + identifier + ')'));
+					markers.addLayer(new CircleMarker(point).bindPopup(description + ' (' + identifier + ')'));
 
 					bounds.extend(L.latLng(point));
 				})
 
-				boundsList.push(bounds);
-				fitBoundsList();
 				map.addLayer(markers);
 			}
 		});
-
-		$.ajax({
-			url : '/proxy',
-			data : {
-				url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature'
-			},
-			success : function(responseXML) {
-				var xml = responseXML, point, d, identifier;
-				var markers = new L.MarkerClusterGroup();
-				var bounds = new L.LatLngBounds();
-
-				$(xml).find('member').each(function(index, element) {
-					point = $(element).find('pos')[0].textContent.split(' ');
-					d = $(element).find('CharacterString')[0].textContent;
-					identifier = $(element).find('name')[0].textContent;
-					markers.addLayer(new L.Marker(point).bindPopup(d + ' (' + identifier + ')'));
-
-					bounds.extend(L.latLng(point));
-				})
-
-				boundsList.push(bounds);
-				fitBoundsList();
-				map.addLayer(markers);
-			}
-		});
-
-		function fitBoundsList() {
-			if (boundsList.length == 3) {
-				var b = new L.LatLngBounds();
-				for (var i = 0, bounds; bounds = boundsList[i++]; ) {
-					b.extend(bounds);
-				}
-
-				//map.fitBounds(bounds);
-				var zoom = map.getBoundsZoom(b);
-				map.setView(b.getCenter(), zoom - 1);
-			}
-		}
-
 	})
 </script>

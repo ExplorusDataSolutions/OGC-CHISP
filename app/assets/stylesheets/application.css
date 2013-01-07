@@ -27,10 +27,24 @@ body {
   padding-top: 41px;
 }
 
-ul.nav li.dropdown:hover > ul.dropdown-menu {
+ul.nav li:hover > ul.dropdown-menu {
   display: block;
 }
 
 .nav .dropdown-menu {
   margin-top: 0px;
 }
+
+.marker-cluster {
+  text-align: center;
+  font-size: 9px;
+  line-height: 12px;
+  border: 2px solid #00ffff;
+  -webkit-text-size-adjust: none;
+}
+
+
+
+
+
+
