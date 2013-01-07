@@ -1,8 +1,42 @@
 <div id="map" style="margin:2px 0 0"></div>
+<div id="list-container">
+<table id="list" class="hide table table-striped table-bordered table-hover table-condensed">
+	<thead>
+		<tr class="info">
+			<th>#</th>
+			<th>Location</th>
+			<th>Type</th>
+			<th>Description</th>
+			<th>Status</th>
+			<th>Actions</th>
+		</tr>	
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+</div>
 <script>
 	jQuery(function($) {
 		$('#map').parent().removeClass('container');
-		$('#map').css('height', $(window).height() - $('#map').position().top - 4 + 'px');
+		
+		$('#list').click(function(e) {
+			if ($(e.target).hasClass('btn-danger')) {
+				var $tr = $(e.target).closest('tr'), $tbody = $tr.parent(), id = $tr.attr('id');
+				$tr.remove();
+				if (!$tbody.children().length) {
+					$tbody.closest('table').hide();
+				}
+				map.removeLayerById(id);
+				adjustHeight();
+			}
+		});
+		
+		function adjustHeight() {
+			var h = $('#list').is(':visible') ? $('#list').height() : 0;
+			$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
+			map && map._onResize();
+		}
+		adjustHeight();
 
 		/**
 		 * This is to remove the zoom limit of the whole map caused by the zoom limit
@@ -11,6 +45,10 @@
 		var Map = L.Map.extend({
 			_limitZoom: function (zoom) {
 				return zoom;
+			},
+			removeLayerById: function (id) {
+				if (!this._layers[id]) { return; }
+				return this.removeLayer(this._layers[id]);
 			}
 		});
 		
@@ -74,8 +112,28 @@
 		
 		/**
 		 * WMS query
-		 * /
+		 */
 		map.on('click', function(e) {
+			var marker = new L.Marker(e.latlng);
+			map.addLayer(marker);
+			
+			var id = L.Util.stamp(marker);
+			$('#list').find('tbody').append([
+				'<tr id="' + id + '">',
+					'<td>' + id + '</td>',
+					'<td>' + e.latlng.lng + ' / ' + e.latlng.lat + '</td>',
+					'<td>poi</td>',
+					'<td>Point on *** Stream</td>',
+					'<td><span class="label label-warning">pending</span></td>',
+					'<td>',
+						' <button class="btn btn-mini btn-danger">Cancel</button>',
+						' <button class="btn btn-mini btn-success">Subscribe</button>',
+					'</td>',
+				'</tr>'].join(''));
+			$('#list').slideDown("fast", function() {
+				adjustHeight();
+			});
+			return
 			var url = 'http://ngwd-bdnes.cits.nrcan.gc.ca/service/ngwds/en/wms/ngwd-wms/ec_pilot_wms';
 			var data = {
 				REQUEST : "GetFeatureInfo",
@@ -108,8 +166,6 @@
 				}
 			});
 		});
-		/**/
-		
 		
 		$.ajax({
 			url : '/proxy',
