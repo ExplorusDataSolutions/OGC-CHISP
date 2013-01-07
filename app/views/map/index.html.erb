@@ -1,19 +1,19 @@
 <div id="map" style="margin:2px 0 0"></div>
 <div id="list-container">
-<table id="list" class="hide table table-striped table-bordered table-hover table-condensed">
-	<thead>
-		<tr class="info">
-			<th>#</th>
-			<th>Location</th>
-			<th>Type</th>
-			<th>Description</th>
-			<th>Status</th>
-			<th>Actions</th>
-		</tr>	
-	</thead>
-	<tbody>
-	</tbody>
-</table>
+	<table id="list" class="hide table table-striped table-bordered table-hover table-condensed">
+		<thead>
+			<tr>
+				<th></th>
+				<th>#</th>
+				<th>Location</th>
+				<th>Type</th>
+				<th>Description</th>
+				<th>Status</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
 </div>
 <script>
 	jQuery(function($) {
@@ -30,11 +30,27 @@
 				adjustHeight();
 			}
 		});
+		$('#list').mouseover(function(e) {
+			if (e.target.tagName == 'TD') {
+				var $tr = $(e.target).closest('tr'), id = $tr.attr('id');
+				var marker = map.getLayerById(id);
+				map.showPopup(marker.getLatLng(), "Point #" + id);
+			}
+		});
+		$('#list').mouseout(function(e) {
+			if (e.target.tagName == 'TD') {
+				map.hidePopup();
+			}
+		});
 		
 		function adjustHeight() {
-			var h = $('#list').is(':visible') ? $('#list').height() : 0;
+			if ($('#list').find('tbody tr').length == 5) {
+				$('#list-container').css('height', $('#list-container').height() + 'px');
+				$('#list-container').css('overflow', 'auto');
+			}
+			var h = $('#list').is(':visible') ? $('#list-container').height() : 0;
 			$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
-			map && map._onResize();
+			//map && map._onResize();
 		}
 		adjustHeight();
 
@@ -46,9 +62,21 @@
 			_limitZoom: function (zoom) {
 				return zoom;
 			},
+			getLayerById: function (id) {
+				return this._layers[id] || null;
+			},
 			removeLayerById: function (id) {
 				if (!this._layers[id]) { return; }
 				return this.removeLayer(this._layers[id]);
+			},
+			showPopup: function(latlng, message) {
+				this.popup || (this.popup = new L.Popup({offset: new L.Point(-3, -6)}));
+				this.popup.setLatLng(latlng);
+				this.popup.setContent(message);
+				this.openPopup(this.popup);
+			},
+			hidePopup: function() {
+				this.closePopup(this.popup);
 			}
 		});
 		
@@ -84,13 +112,26 @@
 		 */
 		CircleMarker = L.CircleMarker.extend({
 			options: {
-				radius: 4,
+				radius: 5,
 				weight: 2,
 				color: '#00ffff',
 				opacity: 1,
-				fill: false, // L.Circle.options.fill = true
+				// L.Circle.options.fill = true
+				// For mouse easy to hover
+				fillOpacity: 0.1
 			},
-			setOpacity: function(){}
+			setOpacity: function(){},
+		});
+		
+		/**
+		 * Pending Marker
+		 */
+		PendingMarker = CircleMarker.extend({
+			options: {
+				radius: 5,
+				fillColor: '#FAA732',
+				fillOpacity: 1
+			}
 		});
 
 		// Inital map location
@@ -114,12 +155,18 @@
 		 * WMS query
 		 */
 		map.on('click', function(e) {
-			var marker = new L.Marker(e.latlng);
+			var marker = new PendingMarker(e.latlng);
 			map.addLayer(marker);
 			
 			var id = L.Util.stamp(marker);
+			marker.on('mouseover', function() {
+				map.showPopup(this.getLatLng(), "Point #" + id);
+			});
+			marker.on('mouseout', function() {
+				map.hidePopup();
+			});
 			$('#list').find('tbody').append([
-				'<tr id="' + id + '">',
+				'<tr id="' + id + '" class="row">',
 					'<td>' + id + '</td>',
 					'<td>' + e.latlng.lng + ' / ' + e.latlng.lat + '</td>',
 					'<td>poi</td>',
