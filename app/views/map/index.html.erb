@@ -18,8 +18,13 @@
 <script>
 	jQuery(function($) {
 		$('#map').parent().removeClass('container');
-		
+
 		$('#list').click(function(e) {
+			if (e.target.tagName == 'TD') {
+				var $tr = $(e.target).closest('tr'), id = $tr.attr('id');
+				var marker = map.getLayerById(id);
+				map.showPopup(marker.getLatLng(), "Point #" + id);
+			}
 			if ($(e.target).hasClass('btn-danger')) {
 				var $tr = $(e.target).closest('tr'), $tbody = $tr.parent(), id = $tr.attr('id');
 				$tr.remove();
@@ -29,20 +34,29 @@
 				map.removeLayerById(id);
 				adjustHeight();
 			}
-		});
-		$('#list').mouseover(function(e) {
-			if (e.target.tagName == 'TD') {
+			if ($(e.target).hasClass('btn-success')) {
 				var $tr = $(e.target).closest('tr'), id = $tr.attr('id');
 				var marker = map.getLayerById(id);
-				map.showPopup(marker.getLatLng(), "Point #" + id);
+				marker.subscribe(function(markers) {
+					if (markers.length) {
+						var bounds = new L.LatLngBounds();
+						for (var i = 0, len = markers.length; i < len; i++) {
+							markers[i].addTo(map);
+							bounds.extend(markers[i].getLatLng());
+						}
+						map.fitBounds(bounds);
+						$tr.find('.label').html('activated')//
+						.removeClass('label-warning').addClass('label-success');
+						$tr.find('.btn-success').closest('td').empty();
+					} else {
+						$tr.find('.label').html('invalid')//
+						.removeClass('label-warning').addClass('label-important');
+						$tr.find('.btn-success').closest('td').empty();
+					}
+				});
 			}
 		});
-		$('#list').mouseout(function(e) {
-			if (e.target.tagName == 'TD') {
-				map.hidePopup();
-			}
-		});
-		
+
 		function adjustHeight() {
 			if ($('#list').find('tbody tr').length == 5) {
 				$('#list-container').css('height', $('#list-container').height() + 'px');
@@ -52,6 +66,7 @@
 			$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
 			//map && map._onResize();
 		}
+
 		adjustHeight();
 
 		/**
@@ -59,70 +74,76 @@
 		 *  of a overlay layer for performance
 		 */
 		var Map = L.Map.extend({
-			_limitZoom: function (zoom) {
+			_limitZoom : function(zoom) {
 				return zoom;
 			},
-			getLayerById: function (id) {
+			getLayerById : function(id) {
 				return this._layers[id] || null;
 			},
-			removeLayerById: function (id) {
-				if (!this._layers[id]) { return; }
+			removeLayerById : function(id) {
+				if (!this._layers[id]) {
+					return;
+				}
 				return this.removeLayer(this._layers[id]);
 			},
-			showPopup: function(latlng, message) {
-				this.popup || (this.popup = new L.Popup({offset: new L.Point(-3, -6)}));
+			showPopup : function(latlng, message) {
+				this.popup || (this.popup = new L.Popup({
+					offset : new L.Point(-3, -6)
+				}));
 				this.popup.setLatLng(latlng);
 				this.popup.setContent(message);
 				this.openPopup(this.popup);
 			},
-			hidePopup: function() {
+			hidePopup : function() {
 				this.closePopup(this.popup);
 			},
-			reproject: function (crs, point, zoom, unbounded) { // (CRS, Point[, Number, Boolean]) -> Point
-				crs = (typeof crs === 'undefined' ? this.options.crs : crs);
+			reproject : function(crs, point, zoom, unbounded) {
+				crs = ( typeof crs === 'undefined' ? this.options.crs : crs);
 				return crs.project(this.unproject(point, zoom, unbounded));
 			},
 		});
-		
+
 		/**
 		 * Enable EPSG:4326 for csnStreamFlow layer
 		 */
 		var WMS = L.TileLayer.WMS.extend({
-			onAdd: function (map) {
-				var crs = (typeof this.options.crs === 'undefined' ? map.options.crs : this.options.crs);
+			getUrl : function() {
+				return this._url;
+			},
+			onAdd : function(map) {
+				var crs = this.options.crs || map.options.crs;
 				delete this.wmsParams.crs;
-				
+
 				var projectionKey = parseFloat(this.wmsParams.version) >= 1.3 ? 'crs' : 'srs';
 				this.wmsParams[projectionKey] = crs.code;
-		
+
 				L.TileLayer.prototype.onAdd.call(this, map);
 			},
-			getTileUrl: function (tilePoint, zoom) { // (Point, Number) -> String
-				var map = this._map,
-					crs = this.options.crs,
-					tileSize = this.options.tileSize,
-
-					nwPoint = tilePoint.multiplyBy(tileSize),
-					sePoint = nwPoint.add(new L.Point(tileSize, tileSize)),
-
-					nw = map.reproject(crs, nwPoint, zoom, true),
-					se = map.reproject(crs, sePoint, zoom, true),
-
-					bbox = [nw.x, se.y, se.x, nw.y].join(','),
-					url = L.Util.template(this._url, {s: this._getSubdomain(tilePoint)});
+			getTileUrl : function(tilePoint, zoom) {// (Point, Number) -> String
+				var map = this._map, //
+				crs = this.options.crs, //
+				tileSize = this.options.tileSize, //
+				nwPoint = tilePoint.multiplyBy(tileSize), //
+				sePoint = nwPoint.add(new L.Point(tileSize, tileSize)), //
+				nw = map.reproject(crs, nwPoint, zoom, true), //
+				se = map.reproject(crs, sePoint, zoom, true), //
+				bbox = [nw.x, se.y, se.x, nw.y].join(','), //
+				url = L.Util.template(this._url, {
+					s : this._getSubdomain(tilePoint)
+				});
 
 				return url + L.Util.getParamString(this.wmsParams) + "&bbox=" + bbox;
 			},
 		});
-		
+
 		/**
 		 * Customize the cluster marker size
 		 */
 		var MarkerClusterGroup = L.MarkerClusterGroup.extend({
-			options: {
-				maxClusterRadius: 50
+			options : {
+				maxClusterRadius : 50
 			},
-			_defaultIconCreateFunction: function(cluster) {
+			_defaultIconCreateFunction : function(cluster) {
 				var childCount = cluster.getChildCount();
 
 				var c = ' marker-cluster-';
@@ -135,37 +156,77 @@
 				}
 
 				return new L.DivIcon({
-					html: childCount,
-					className: 'marker-cluster' + c,
-					iconSize: new L.Point(12, 12)
+					html : childCount,
+					className : 'marker-cluster' + c,
+					iconSize : new L.Point(12, 12)
 				});
 			}
 		});
-		
+
 		/**
 		 * Customize the circle style
 		 */
 		CircleMarker = L.CircleMarker.extend({
-			options: {
-				radius: 5,
-				weight: 2,
-				color: '#00ffff',
-				opacity: 1,
+			options : {
+				radius : 5,
+				weight : 2,
+				color : '#00ffff',
+				opacity : 1,
 				// L.Circle.options.fill = true
 				// For mouse easy to hover
-				fillOpacity: 0.1
+				fillOpacity : 0.1
 			},
-			setOpacity: function(){},
+			setOpacity : function() {
+			},
 		});
-		
+
 		/**
 		 * Pending Marker
 		 */
 		PendingMarker = CircleMarker.extend({
-			options: {
-				radius: 5,
-				fillColor: '#FAA732',
-				fillOpacity: 1
+			options : {
+				radius : 5,
+				fillColor : '#FAA732',
+				fillOpacity : 1
+			},
+			subscribe : function(callback) {
+				var latlng = this.getLatLng();
+				var data = {
+					REQUEST : "GetFeatureInfo",
+					EXCEPTIONS : "application/vnd.ogc.se_xml",
+					BBOX : map.getBounds().toBBoxString(),
+					SERVICE : "WMS",
+					QUERY_LAYERS : 'w_level',
+					Layers : 'w_level',
+					VERSION : '1.1.1',
+					SRS : 'EPSG:4326',
+					WIDTH : map.getSize().x,
+					HEIGHT : map.getSize().y,
+					y : latlng.lat,
+					x : latlng.lng,
+				};
+				var kvp = [];
+				for (var key in data) {
+					kvp.push(key + '=' + data[key]);
+				}
+				var url = cdnStreamFLow.getUrl() + '?' + kvp.join('&');
+
+				$.ajax({
+					url : '/proxy',
+					data : {
+						url : url
+					},
+					success : function(xml, status, response) {
+						var $response = $(xml).find('GetFeatureOfInterestResponse');
+						var markers = [];
+						$response.find('featureMember').each(function(index, element) {
+							var pos = $(element).find('pos')[0].textContent.split(' ');
+							var description = $(element).find('description')[0].textContent;
+							markers.push(new L.Marker(pos));
+						})
+						$.isFunction(callback) && callback(markers);
+					}
+				});
 			}
 		});
 
@@ -173,7 +234,9 @@
 		var map = new Map('map').setView([51, -110], 6);
 
 		// Use MapBox as base layer
-		var baseLayer = L.tileLayer('http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png').addTo(map);
+		var baseLayer = L.tileLayer(//
+		'http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png'//
+		).addTo(map);
 
 		// nhn:hydrography:hydro1m_l only display at zoom 9
 		var overlay = new WMS("http://ows.geobase.ca/wms/geobase_en", {
@@ -184,23 +247,23 @@
 			maxZoom : 9,
 			minZoom : 9,
 		}).addTo(map);
-		
-		var cdnStreamFLow = new WMS("http://ngwd-bdnes.cits.nrcan.gc.ca/service/ngwds/en/wms/ngwd-wms/ec_pilot_wms", {
-			layers: 'w_level',
-			format: 'image/png',
-			version: '1.1.0',
-			transparent: true,
+
+		var cdnStreamFLow = new WMS(//
+		"http://ngwd-bdnes.cits.nrcan.gc.ca/service/ngwds/en/wms/ngwd-wms/ec_pilot_wms", {
+			layers : 'w_level',
+			format : 'image/png',
+			version : '1.1.0',
+			transparent : true,
 			crs : L.CRS.EPSG4326,
 		}).addTo(map);
-		
-		
+
 		/**
 		 * WMS query
 		 */
 		map.on('click', function(e) {
 			var marker = new PendingMarker(e.latlng);
 			map.addLayer(marker);
-			
+
 			var id = L.Util.stamp(marker);
 			marker.on('mouseover', function() {
 				map.showPopup(this.getLatLng(), "Point #" + id);
@@ -208,55 +271,23 @@
 			marker.on('mouseout', function() {
 				map.hidePopup();
 			});
-			$('#list').find('tbody').append([
-				'<tr id="' + id + '" class="row">',
-					'<td>' + id + '</td>',
-					'<td>' + e.latlng.lng + ' / ' + e.latlng.lat + '</td>',
-					'<td>poi</td>',
-					'<td>Point on *** Stream</td>',
-					'<td><span class="label label-warning">pending</span></td>',
-					'<td>',
-						' <button class="btn btn-mini btn-danger">Cancel</button>',
-						' <button class="btn btn-mini btn-success">Subscribe</button>',
-					'</td>',
-				'</tr>'].join(''));
+			$('#list').find('tbody').prepend([//
+			'<tr id="' + id + '" class="row">', //
+			'<td>' + id + '</td>', //
+			'<td>' + e.latlng.lng + ' / ' + e.latlng.lat + '</td>', //
+			'<td>poi</td>', //
+			'<td>Point on *** Stream</td>', //
+			'<td><span class="label label-warning">pending</span></td>', //
+			'<td>', //
+			' <button class="btn btn-mini btn-danger">Cancel</button>', //
+			' <button class="btn btn-mini btn-success">Subscribe</button>', //
+			'</td>', //
+			'</tr>'].join(''));
 			$('#list').slideDown("fast", function() {
 				adjustHeight();
 			});
-			return
-			var url = 'http://ngwd-bdnes.cits.nrcan.gc.ca/service/ngwds/en/wms/ngwd-wms/ec_pilot_wms';
-			var data = {
-				REQUEST : "GetFeatureInfo",
-				EXCEPTIONS : "application/vnd.ogc.se_xml",
-				BBOX : map.getBounds().toBBoxString(),
-				SERVICE : "WMS",
-				QUERY_LAYERS : 'w_level',
-				Layers : 'w_level',
-				VERSION : '1.1.1',
-				SRS : 'EPSG:4326',
-				WIDTH : map.getSize().x,
-				HEIGHT : map.getSize().y,
-				y : e.latlng.lat,
-				x : e.latlng.lng,
-				INFO_FORMAT : 'text/xml'
-			};
-			var kvp = [];
-			for (var i in data) {
-				kvp.push(i + '=' + data[i]);
-			}
-			url += '?' + kvp.join('&');
-			
-			$.ajax({
-				url : '/proxy',
-				data : {
-					url : url
-				},
-				success : function(xml, status, response) {
-					alert(url + '\n\n-----' + response.responseText)
-				}
-			});
 		});
-		
+
 		$.ajax({
 			url : '/proxy',
 			data : {
@@ -264,14 +295,17 @@
 			},
 			success : function(responseXML) {
 				var xml = responseXML, point, d, identifier;
-				var markers = new MarkerClusterGroup();
+				var marker, id, markers = new MarkerClusterGroup();
 				var bounds = new L.LatLngBounds();
 
 				$(xml).find('member').each(function(index, element) {
 					point = $(element).find('pos')[0].textContent.split(' ');
 					d = $(element).find('CharacterString')[0].textContent;
 					identifier = $(element).find('name')[0].textContent;
-					markers.addLayer(new CircleMarker(point).bindPopup(d + ' (' + identifier + ')'));
+					marker = new CircleMarker(point);
+					id = L.Util.stamp(marker);
+					var popupContent = d + ' (' + identifier + ')';
+					markers.addLayer(marker.bindPopup(popupContent));
 
 					bounds.extend(L.latLng(point));
 				})
