@@ -1,17 +1,7 @@
 <div id="map" style="margin:2px 0 0"></div>
 <div id="list-container">
 	<table id="list" class="hide table table-striped table-bordered table-hover table-condensed">
-		<thead>
-			<tr>
-				<th></th>
-				<th>#</th>
-				<th>Location</th>
-				<th>Type</th>
-				<th>Description</th>
-				<th>Status</th>
-				<th>Actions</th>
-			</tr>
-		</thead>
+		<thead></thead>
 		<tbody></tbody>
 	</table>
 </div>
@@ -23,19 +13,27 @@
 			if (e.target.tagName == 'TD') {
 				var $tr = $(e.target).closest('tr'), id = $tr.attr('id');
 				var marker = map.getLayerById(id);
-				map.showPopup(marker.getLatLng(), "Point #" + id);
+				map.openPopup(id);
 			}
 			if ($(e.target).hasClass('btn-danger')) {
-				var $tr = $(e.target).closest('tr'), $tbody = $tr.parent(), id = $tr.attr('id');
+				var $tr = $(e.target).closest('tr'), $tbody = $tr.parent();
+				var id = $tr.attr('id').replace(/marker_/, '');
 				$tr.remove();
 				if (!$tbody.children().length) {
 					$tbody.closest('table').hide();
 				}
-				map.removeLayerById(id);
+				var marker = map.getLayerById(id);
+				if (marker.isFromWFS()) {
+					marker.setStatus('normal');
+				} else {
+					map.removeLayerById(id);
+				}
+				map.closePopup(id);
 				adjustHeight();
 			}
 			if ($(e.target).hasClass('btn-success')) {
-				var $tr = $(e.target).closest('tr'), id = $tr.attr('id');
+				var $tr = $(e.target).closest('tr');
+				var id = $tr.attr('id').replace(/marker_/, '');
 				var marker = map.getLayerById(id);
 				marker.subscribe(function(markers) {
 					if (markers.length) {
@@ -81,21 +79,34 @@
 				return this._layers[id] || null;
 			},
 			removeLayerById : function(id) {
-				if (!this._layers[id]) {
-					return;
-				}
 				return this.removeLayer(this._layers[id]);
 			},
-			showPopup : function(latlng, message) {
-				this.popup || (this.popup = new L.Popup({
-					offset : new L.Point(-3, -6)
+			openPopup : function(markerId) {
+				var marker = this.getLayerById(markerId);
+				var latlng = marker.getLatLng();
+				var rows = ["Point #" + markerId];
+				for (var key in marker.data) {
+					rows.push(key + ' : ' + marker.data[key]);
+				}
+				var content = rows.join('<br />');
+
+				this._popup || (this._popup = new L.Popup({
+					markerId : markerId,
+					offset : new L.Point(-3, -6),
 				}));
-				this.popup.setLatLng(latlng);
-				this.popup.setContent(message);
-				this.openPopup(this.popup);
+				this._popup.setLatLng(latlng).setContent(content);
+				L.Map.prototype.openPopup.call(this, this._popup);
 			},
-			hidePopup : function() {
-				this.closePopup(this.popup);
+			closePopup : function(markerId) {
+				if (markerId) {
+					if (this._popup && this._popup.options.markerId == markerId) {
+						return this.closePopup();
+					} else {
+						return this;
+					}
+				} else {
+					return L.Map.prototype.closePopup.call(this);
+				}
 			},
 			reproject : function(crs, point, zoom, unbounded) {
 				crs = ( typeof crs === 'undefined' ? this.options.crs : crs);
@@ -140,6 +151,8 @@
 		 * Customize the cluster marker size
 		 */
 		var MarkerClusterGroup = L.MarkerClusterGroup.extend({
+			includes : [L.Mixin.Events],
+
 			options : {
 				maxClusterRadius : 50
 			},
@@ -160,34 +173,131 @@
 					className : 'marker-cluster' + c,
 					iconSize : new L.Point(12, 12)
 				});
-			}
+			},
+			//Overrides L.MarkerClusterGroup.onAdd
+			onAdd : function(map) {
+				map._initPathRoot();
+				L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
+				//L.DomEvent.on(map._pathRoot, 'mouseover', this._onMouseOver, this);
+
+				L.MarkerClusterGroup.prototype.onAdd.apply(this, arguments);
+			},
+			_onMouseClick : function(e) {
+				if (e.target.tagName == 'svg') {
+					// click on map, to bubble
+				} else {
+					this._map.getLayerById(e.target.id).addToTable();
+					L.DomEvent.stopPropagation(e);
+				}
+			},
+			_onMouseOver : function(e) {
+				if (e.target.tagName == 'path') {
+					map.openPopup(e.target.id);
+				}
+			},
 		});
 
 		/**
 		 * Customize the circle style
 		 */
 		CircleMarker = L.CircleMarker.extend({
-			options : {
+			data : {},
+			normalStyle : {
 				radius : 5,
 				weight : 2,
 				color : '#00ffff',
 				opacity : 1,
-				// L.Circle.options.fill = true
-				// For mouse easy to hover
+				fill : true,
+				// For mouse easy to hover and click on
 				fillOpacity : 0.1
+			},
+			pendingStyle : {
+				radius : 5,
+				weight : 2,
+				color : '#00ffff',
+				opacity : 1,
+				fill : true,
+				fillColor : '#FAA732',
+				fillOpacity : 1
+			},
+			initialize : function(latlng, data) {
+				this.data = data || {};
+				L.CircleMarker.prototype.initialize.call(this, latlng, this.normalStyle);
 			},
 			setOpacity : function() {
 			},
-		});
+			_initPath : function() {
+				L.CircleMarker.prototype._initPath.apply(this, arguments);
+				this._path.id = L.Util.stamp(this);
+			},
+			_onMouseClick : function(e) {
+				if (this._map.dragging && this._map.dragging.moved()) {
+					return;
+				}
 
-		/**
-		 * Pending Marker
-		 */
-		PendingMarker = CircleMarker.extend({
-			options : {
-				radius : 5,
-				fillColor : '#FAA732',
-				fillOpacity : 1
+				this._fireMouseEvent(e);
+				//Disable this to enable bubble
+				//L.DomEvent.stopPropagation(e);
+
+				if (this.isFromWFS()) {
+					this.setStatus('pending');
+				}
+			},
+			isFromWFS : function() {
+				return this.data && this.data.id;
+			},
+			setStatus : function(status) {
+				if (status == 'pending') {
+					this.setStyle(this.pendingStyle);
+				} else if (status == 'normal') {
+					this.setStyle(this.normalStyle);
+				}
+			},
+			addToTable : function() {
+				var id = L.Util.stamp(this);
+				if ($('#marker_' + id).length) {
+					return;
+				}
+
+				if ($('#list').find('thead tr').length == 0) {
+					$('#list').css('font-size', '12px');
+					$('#list').find('thead').append([//
+					"<tr>", //
+					"<th></th>", //
+					"<th>#</th>", //
+					"<th>gml:id</th>", //
+					"<th>Location</th>", //
+					"<th>Type</th>", //
+					"<th>Name</th>", //
+					"<th>Organisation Name</th>", //
+					"<th>Watershed</th>", //
+					"<th>Description</th>", //
+					"<th>Status</th>", //
+					"<th>Actions</th>", //
+					"</tr>"//
+					].join(''));
+				}
+
+				var latlng = this.getLatLng(), data = this.data;
+				$('#list').find('tbody').prepend([//
+				'<tr id="marker_' + id + '" class="row">', //
+				'<td>' + id + '</td>', //
+				'<td>' + (data.id || "") + '</td>', //
+				'<td>' + latlng.lng.toFixed(7) + ' / ' + latlng.lat.toFixed(7) + '</td>', //
+				'<td>poi</td>', //
+				'<td>' + (data.name || '') + '</td>', //
+				'<td>' + (data.organisationName || '') + '</td>', //
+				'<td>' + (data.Watershed || '') + '</td>', //
+				'<td>Point on *** Stream</td>', //
+				'<td><span class="label label-warning">pending</span></td>', //
+				'<td>', //
+				' <button class="btn btn-mini btn-danger">Cancel</button>', //
+				' <button class="btn btn-mini btn-success">Subscribe</button>', //
+				'</td>', //
+				'</tr>'].join(''));
+				$('#list').slideDown("fast", function() {
+					adjustHeight();
+				});
 			},
 			subscribe : function(callback) {
 				var latlng = this.getLatLng();
@@ -261,31 +371,7 @@
 		 * WMS query
 		 */
 		map.on('click', function(e) {
-			var marker = new PendingMarker(e.latlng);
-			map.addLayer(marker);
-
-			var id = L.Util.stamp(marker);
-			marker.on('mouseover', function() {
-				map.showPopup(this.getLatLng(), "Point #" + id);
-			});
-			marker.on('mouseout', function() {
-				map.hidePopup();
-			});
-			$('#list').find('tbody').prepend([//
-			'<tr id="' + id + '" class="row">', //
-			'<td>' + id + '</td>', //
-			'<td>' + e.latlng.lng + ' / ' + e.latlng.lat + '</td>', //
-			'<td>poi</td>', //
-			'<td>Point on *** Stream</td>', //
-			'<td><span class="label label-warning">pending</span></td>', //
-			'<td>', //
-			' <button class="btn btn-mini btn-danger">Cancel</button>', //
-			' <button class="btn btn-mini btn-success">Subscribe</button>', //
-			'</td>', //
-			'</tr>'].join(''));
-			$('#list').slideDown("fast", function() {
-				adjustHeight();
-			});
+			new CircleMarker(e.latlng).addTo(this).addToTable();
 		});
 
 		$.ajax({
@@ -293,22 +379,28 @@
 			data : {
 				url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
 			},
-			success : function(responseXML) {
-				var xml = responseXML, point, d, identifier;
-				var marker, id, markers = new MarkerClusterGroup();
+			dataType : 'xml',
+			success : function(xml) {
+				var markers = new MarkerClusterGroup();
 				var bounds = new L.LatLngBounds();
 
+				var point, data, name, value;
 				$(xml).find('member').each(function(index, element) {
-					point = $(element).find('pos')[0].textContent.split(' ');
-					d = $(element).find('CharacterString')[0].textContent;
-					identifier = $(element).find('name')[0].textContent;
-					marker = new CircleMarker(point);
-					id = L.Util.stamp(marker);
-					var popupContent = d + ' (' + identifier + ')';
-					markers.addLayer(marker.bindPopup(popupContent));
+					point = $(element).find('pos').text().split(' ');
+					data = {
+						id : $(element).find('featureOfInterest').attr('gml:id'),
+						name : $(element).find('name').text(),
+						organisationName : $(element).find('CharacterString').text(),
+					};
+					$(element).find('NamedValue').each(function(index, element) {
+						name = $(element).find('name').attr('xlink:title');
+						value = $(element).find('value').text();
+						data[name] = value;
+					});
+					markers.addLayer(new CircleMarker(point, data));
 
 					bounds.extend(L.latLng(point));
-				})
+				});
 
 				map.addLayer(markers);
 				map.setView(bounds.getCenter(), map.getBoundsZoom(bounds));
@@ -326,19 +418,15 @@
 				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0']//
 				.join('')
 			},
-			success : function(responseXML) {
-				var xml = responseXML, point, description, identifier;
-				var markers = new MarkerClusterGroup();
-				var bounds = new L.LatLngBounds();
-
+			success : function(xml) {
+				var point, markers = new MarkerClusterGroup();
 				$(xml).find('featureMember').each(function(index, element) {
-					point = $(element).find('pos')[0].textContent.split(' ');
-					description = $(element).find('description')[0].textContent;
-					identifier = $(element).find('identifier')[0].textContent;
-					markers.addLayer(new CircleMarker(point).bindPopup(description + ' (' + identifier + ')'));
-
-					bounds.extend(L.latLng(point));
-				})
+					point = $(element).find('pos').text().split(' ');
+					markers.addLayer(new CircleMarker(point, {
+						id : $(element).find('identifier').text(),
+						name : $(element).find('description').text(),
+					}));
+				});
 
 				map.addLayer(markers);
 			}
@@ -355,19 +443,15 @@
 				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 				.join('')
 			},
-			success : function(responseXML) {
-				var xml = responseXML, point, description, identifier;
-				var markers = new MarkerClusterGroup();
-				var bounds = new L.LatLngBounds();
-
+			success : function(xml) {
+				var point, markers = new MarkerClusterGroup();
 				$(xml).find('featureMember').each(function(index, element) {
-					point = $(element).find('pos')[0].textContent.split(' ');
-					description = $(element).find('description')[0].textContent;
-					identifier = $(element).find('identifier')[0].textContent;
-					markers.addLayer(new CircleMarker(point).bindPopup(description + ' (' + identifier + ')'));
-
-					bounds.extend(L.latLng(point));
-				})
+					point = $(element).find('pos').text().split(' ');
+					markers.addLayer(new CircleMarker(point, {
+						id : $(element).find('identifier').text(),
+						name : $(element).find('description').text(),
+					}));
+				});
 
 				map.addLayer(markers);
 			}
