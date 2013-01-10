@@ -1,6 +1,5 @@
 class CswController < ApplicationController
   def index
-    redirect_to csw_home_url
   end
 
   def proxy
@@ -45,9 +44,6 @@ class CswController < ApplicationController
 
   def describe_record
     csw_proxy
-  end
-
-  def test_csw
   end
 
   def check_post
