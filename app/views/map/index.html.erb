@@ -11,8 +11,8 @@
 
 		$('#list').click(function(e) {
 			if (e.target.tagName == 'TD') {
-				var $tr = $(e.target).closest('tr'), id = $tr.attr('id');
-				var marker = map.getLayerById(id);
+				var $tr = $(e.target).closest('tr');
+				var id = $tr.attr('id').replace(/marker_/, '');
 				map.openPopup(id);
 			}
 			if ($(e.target).hasClass('btn-danger')) {
@@ -85,6 +85,8 @@
 			},
 			openPopup : function(markerId) {
 				var marker = this.getLayerById(markerId);
+				if (!marker)
+					return;
 				var latlng = marker.getLatLng();
 				var rows = ["Point #" + markerId];
 				for (var key in marker.data) {
@@ -180,7 +182,7 @@
 			onAdd : function(map) {
 				map._initPathRoot();
 				L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
-				//L.DomEvent.on(map._pathRoot, 'mouseover', this._onMouseOver, this);
+				L.DomEvent.on(map._pathRoot, 'mouseover', this._onMouseOver, this);
 
 				L.MarkerClusterGroup.prototype.onAdd.apply(this, arguments);
 			},
