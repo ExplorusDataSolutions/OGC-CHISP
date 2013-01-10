@@ -183,6 +183,7 @@
 				map._initPathRoot();
 				L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
 				L.DomEvent.on(map._pathRoot, 'mouseover', this._onMouseOver, this);
+				L.DomEvent.on(map._pathRoot, 'mouseout', this._onMouseOut, this);
 
 				L.MarkerClusterGroup.prototype.onAdd.apply(this, arguments);
 			},
@@ -197,6 +198,11 @@
 			_onMouseOver : function(e) {
 				if (e.target.tagName == 'path') {
 					map.openPopup(e.target.id);
+				}
+			},
+			_onMouseOut : function(e) {
+				if (e.target.tagName == 'path') {
+					map.closePopup(e.target.id);
 				}
 			},
 		});
