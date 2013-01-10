@@ -96,7 +96,7 @@
 
 				this._popup || (this._popup = new L.Popup({
 					markerId : markerId,
-					offset : new L.Point(-3, -6),
+					offset : new L.Point(0, -3),
 				}));
 				this._popup.setLatLng(latlng).setContent(content);
 				L.Map.prototype.openPopup.call(this, this._popup);
@@ -254,7 +254,7 @@
 					L.CircleMarker.prototype.initialize.call(this, latlng, this.swStyle);
 				} else if (this.data.type == 'Ground Water Station') {
 					L.CircleMarker.prototype.initialize.call(this, latlng, this.gwStyle);
-				} else if (this.data.type == 'USGS Station') {
+				} else {
 					L.CircleMarker.prototype.initialize.call(this, latlng, this.normalStyle);
 				}
 			},
