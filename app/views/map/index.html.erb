@@ -343,7 +343,7 @@
 		});
 
 		// Inital map location
-		var map = new Map('map').setView([51, -110], 6);
+		var map = new Map('map').setView([51, -100], 5);
 
 		// Use MapBox as base layer
 		var baseLayer = L.tileLayer(//
@@ -375,7 +375,6 @@
 			dataType : 'xml',
 			success : function(xml) {
 				var markers = new MarkerClusterGroup();
-				var bounds = new L.LatLngBounds();
 
 				var point, data, name, value;
 				$(xml).find('member').each(function(index, element) {
@@ -391,12 +390,9 @@
 						data[name] = value;
 					});
 					markers.addLayer(new CircleMarker(point, data));
-
-					bounds.extend(L.latLng(point));
 				});
 
 				map.addLayer(markers);
-				map.setView(bounds.getCenter(), map.getBoundsZoom(bounds));
 			}
 		});
 
@@ -407,7 +403,7 @@
 				'REQUEST=GetFeatureOfInterest', //
 				'&VERSION=2.0.0', //
 				'&SERVICE=SOS', //
-				'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.2,49,-99.5,50.1', //
+				'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
 				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 				.join('')
 			},
@@ -432,7 +428,7 @@
 				'REQUEST=GetFeatureOfInterest', //
 				'&VERSION=2.0.0', //
 				'&SERVICE=SOS', //
-				'&spatialFilter=om:featureOfInterest/*/sams:shape,-116,50.5,-114.3,51.6', //
+				'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
 				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 				.join('')
 			},
