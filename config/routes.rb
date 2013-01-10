@@ -45,7 +45,6 @@ OGCChisp::Application.routes.draw do
   
   # csw controller
   match '/svc/csw' => "csw#index"
-  match '/csw/test' => "csw#test_csw"
   match '/proxy' => "csw#proxy"
   match '/csw' => "csw#get_capabilities", :constraints => OGCChisp::Constraint.new("GetCapabilities")
   match '/csw' => "csw#get_domain", :constraints => OGCChisp::Constraint.new("GetDomain")
