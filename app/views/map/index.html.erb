@@ -23,10 +23,12 @@
 					$tbody.closest('table').hide();
 				}
 				var marker = map.getLayerById(id);
-				if (marker.isFromWFS()) {
-					marker.setStatus('normal');
-				} else {
-					map.removeLayerById(id);
+				if (marker) {
+					if (marker.isFromWFS()) {
+						marker.setStatus('normal');
+					} else {
+						map.removeLayerById(id);
+					}
 				}
 				map.closePopup(id);
 				adjustHeight();
