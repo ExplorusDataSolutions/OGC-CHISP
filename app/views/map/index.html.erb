@@ -360,15 +360,6 @@
 			minZoom : 9,
 		}).addTo(map);
 
-		var cdnStreamFLow = new WMS(//
-		"http://ngwd-bdnes.cits.nrcan.gc.ca/service/ngwds/en/wms/ngwd-wms/ec_pilot_wms", {
-			layers : 'w_level',
-			format : 'image/png',
-			version : '1.1.0',
-			transparent : true,
-			crs : L.CRS.EPSG4326,
-		}).addTo(map);
-
 		/**
 		 * WMS query
 		 */
@@ -417,7 +408,7 @@
 				'&VERSION=2.0.0', //
 				'&SERVICE=SOS', //
 				'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.2,49,-99.5,50.1', //
-				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0']//
+				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 				.join('')
 			},
 			success : function(xml) {
