@@ -271,7 +271,6 @@
 					"<th>#</th>", //
 					"<th>gml:id</th>", //
 					"<th>Location</th>", //
-					"<th>Type</th>", //
 					"<th>Name</th>", //
 					"<th>Organisation Name</th>", //
 					"<th>Watershed</th>", //
@@ -288,11 +287,10 @@
 				'<td>' + id + '</td>', //
 				'<td>' + (data.id || "") + '</td>', //
 				'<td>' + latlng.lng.toFixed(7) + ' / ' + latlng.lat.toFixed(7) + '</td>', //
-				'<td>poi</td>', //
 				'<td>' + (data.name || '') + '</td>', //
 				'<td>' + (data.organisationName || '') + '</td>', //
 				'<td>' + (data.Watershed || '') + '</td>', //
-				'<td>Point on *** Stream</td>', //
+				'<td>' + (data.type || '') + '</td>', //
 				'<td><span class="label label-warning">pending</span></td>', //
 				'<td>', //
 				' <button class="btn btn-mini btn-danger">Cancel</button>', //
@@ -366,7 +364,9 @@
 		 * WMS query
 		 */
 		map.on('click', function(e) {
-			new CircleMarker(e.latlng).addTo(this).addToTable();
+			new CircleMarker(e.latlng, {
+				type : 'Point of Interest',
+			}).addTo(this).addToTable();
 		});
 
 		$.ajax({
@@ -385,6 +385,7 @@
 						id : $(element).find('featureOfInterest').attr('gml:id'),
 						name : $(element).find('name').text(),
 						organisationName : $(element).find('CharacterString').text(),
+						type : 'USGS Station',
 					};
 					$(element).find('NamedValue').each(function(index, element) {
 						name = $(element).find('name').attr('xlink:title');
@@ -416,6 +417,7 @@
 					markers.addLayer(new CircleMarker(point, {
 						id : $(element).find('identifier').text(),
 						name : $(element).find('description').text(),
+						type : 'Surface Water Station',
 					}));
 				});
 
@@ -441,6 +443,7 @@
 					markers.addLayer(new CircleMarker(point, {
 						id : $(element).find('identifier').text(),
 						name : $(element).find('description').text(),
+						type : 'Ground Water Station',
 					}));
 				});
 
