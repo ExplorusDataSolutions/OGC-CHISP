@@ -41,8 +41,12 @@ ul.nav li:hover > ul.dropdown-menu {
   -webkit-text-size-adjust: none;
 }
 
+.marker-cluster-sw {
+	border: 2px solid #ff0000;
+}
 
-
-
+.marker-cluster-gw {
+	border: 2px solid #ffff00;
+}
 
 

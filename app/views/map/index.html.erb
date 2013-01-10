@@ -164,12 +164,12 @@
 				var childCount = cluster.getChildCount();
 
 				var c = ' marker-cluster-';
-				if (childCount < 10) {
-					c += 'small';
-				} else if (childCount < 100) {
-					c += 'medium';
+				if (this.type == 'Surface Water Station') {
+					c += 'sw';
+				} else if (this.type == 'Ground Water Station') {
+					c += 'gw';
 				} else {
-					c += 'large';
+					c += 'poi';
 				}
 
 				return new L.DivIcon({
@@ -230,9 +230,33 @@
 				fillColor : '#FAA732',
 				fillOpacity : 1
 			},
+			swStyle : {
+				radius : 5,
+				weight : 2,
+				color : '#ff0000',
+				opacity : 1,
+				fill : true,
+				// For mouse easy to hover and click on
+				fillOpacity : 0.1
+			},
+			gwStyle : {
+				radius : 5,
+				weight : 2,
+				color : '#ffff00',
+				opacity : 1,
+				fill : true,
+				// For mouse easy to hover and click on
+				fillOpacity : 0.1
+			},
 			initialize : function(latlng, data) {
 				this.data = data || {};
-				L.CircleMarker.prototype.initialize.call(this, latlng, this.normalStyle);
+				if (this.data.type == 'Surface Water Station') {
+					L.CircleMarker.prototype.initialize.call(this, latlng, this.swStyle);
+				} else if (this.data.type == 'Ground Water Station') {
+					L.CircleMarker.prototype.initialize.call(this, latlng, this.gwStyle);
+				} else if (this.data.type == 'USGS Station') {
+					L.CircleMarker.prototype.initialize.call(this, latlng, this.normalStyle);
+				}
 			},
 			setOpacity : function() {
 			},
@@ -349,7 +373,7 @@
 		});
 
 		// Inital map location
-		var map = new Map('map').setView([51, -100], 5);
+		var map = new Map('map').setView([53, -100], 5);
 
 		// Use MapBox as base layer
 		var baseLayer = L.tileLayer(//
@@ -382,7 +406,9 @@
 			},
 			dataType : 'xml',
 			success : function(xml) {
-				var markers = new MarkerClusterGroup();
+				var markers = new MarkerClusterGroup({
+					type : 'USGS Station',
+				});
 
 				var point, data, name, value;
 				$(xml).find('member').each(function(index, element) {
@@ -417,7 +443,10 @@
 				.join('')
 			},
 			success : function(xml) {
-				var point, markers = new MarkerClusterGroup();
+				var point, markers = new MarkerClusterGroup({
+					type : 'Surface Water Station',
+				});
+
 				$(xml).find('featureMember').each(function(index, element) {
 					point = $(element).find('pos').text().split(' ');
 					markers.addLayer(new CircleMarker(point, {
@@ -443,7 +472,10 @@
 				.join('')
 			},
 			success : function(xml) {
-				var point, markers = new MarkerClusterGroup();
+				var point, markers = new MarkerClusterGroup({
+					type : 'Ground Water Station',
+				});
+
 				$(xml).find('featureMember').each(function(index, element) {
 					point = $(element).find('pos').text().split(' ');
 					markers.addLayer(new CircleMarker(point, {
