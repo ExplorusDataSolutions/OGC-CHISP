@@ -394,9 +394,28 @@
 		 * WMS query
 		 */
 		map.on('click', function(e) {
-			new CircleMarker(e.latlng, {
-				type : 'Point of Interest',
-			}).addTo(this).addToTable();
+			var me = this;
+
+			me.t0 = me.t1 || new Date;
+			me.t1 = new Date;
+
+			// This timeout value should not be quicker than system double click speed
+			// Or both Zoom in and Add marker function will be activated
+			var timeout = 500;
+			if (me.t1.getTime() - me.t0.getTime() < timeout) {
+				// a double click, cancel the previous click
+				if (me.timer) {
+					clearTimeout(me.timer);
+					me.timer = null;
+				}
+			} else {
+				me.timer = setTimeout(function() {
+					me.timer = null;
+					new CircleMarker(e.latlng, {
+						type : 'Point of Interest',
+					}).addTo(me).addToTable();
+				}, timeout);
+			}
 		});
 
 		$.ajax({
