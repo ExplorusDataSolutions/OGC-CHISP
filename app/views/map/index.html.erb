@@ -401,8 +401,8 @@
 
 			// This timeout value should not be quicker than system double click speed
 			// Or both Zoom in and Add marker function will be activated
-			var timeout = 500;
-			if (me.t1.getTime() - me.t0.getTime() < timeout) {
+			var timeout = 500, interval = me.t1.getTime() - me.t0.getTime();
+			if (50 < interval && interval < timeout) {
 				// a double click, cancel the previous click
 				if (me.timer) {
 					clearTimeout(me.timer);
