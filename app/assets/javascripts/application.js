@@ -22,5 +22,4 @@
 //= require leaflet-tilelayer.wms
 //= require leaflet-clustermarker
 //= require leaflet-layerscontrol
-//= require underscore-min
-//= require backbone-min
+//= require backbone-rails
