@@ -3,6 +3,7 @@
  */
 CircleMarker = L.CircleMarker.extend({
 	data : {},
+	originStyle : null,
 	normalStyle : {
 		radius : 5,
 		weight : 2,
@@ -42,12 +43,13 @@ CircleMarker = L.CircleMarker.extend({
 	initialize : function(latlng, data) {
 		this.data = data || {};
 		if (this.data.type == 'Surface Water Station') {
-			L.CircleMarker.prototype.initialize.call(this, latlng, this.swStyle);
+			this.originStyle = this.swStyle;
 		} else if (this.data.type == 'Ground Water Station') {
-			L.CircleMarker.prototype.initialize.call(this, latlng, this.gwStyle);
+			this.originStyle = this.gwStyle;
 		} else {
-			L.CircleMarker.prototype.initialize.call(this, latlng, this.normalStyle);
+			this.originStyle = this.normalStyle;
 		}
+		L.CircleMarker.prototype.initialize.call(this, latlng, this.originStyle);
 	},
 	setOpacity : function() {
 	},
@@ -74,8 +76,8 @@ CircleMarker = L.CircleMarker.extend({
 	setStatus : function(status) {
 		if (status == 'pending') {
 			this.setStyle(this.pendingStyle);
-		} else if (status == 'normal') {
-			this.setStyle(this.normalStyle);
+		} else if (status == 'origin') {
+			this.setStyle(this.originStyle);
 		}
 	},
 	subscribe : function(callback) {

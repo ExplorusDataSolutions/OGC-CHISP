@@ -38,7 +38,7 @@
 				var marker = map.getLayerById(id);
 				if (marker) {
 					if (marker.isFromWFS()) {
-						marker.setStatus('normal');
+						marker.setStatus('origin');
 					} else {
 						map.removeLayerById(id);
 					}
