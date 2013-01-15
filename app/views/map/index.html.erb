@@ -7,6 +7,10 @@
 </div>
 <script>
 	jQuery(function($) {
+		var AppView = Backbone.View.extend({
+
+		});
+
 		$('#map').parent().removeClass('container');
 
 		$('#list').click(function(e) {
@@ -118,10 +122,34 @@
 			},
 		});
 
+		L.TileLayer = L.TileLayer.extend({
+			_status : 'off', // off, loading, on
+			status : function() {
+				return this._status;
+			},
+			originInitialize : L.TileLayer.prototype.initialize,
+			initialize : function(url, options) {
+				this.originInitialize(url, options);
+
+				this.on('loading', this._onStatusLoading, this);
+				this.on('load', this._onStatusLoad, this);
+			},
+			_onStatusLoading : function() {
+				this._status = 'loading';
+			},
+			_onStatusLoad : function() {
+				this._status = 'on';
+			},
+		});
+
 		/**
 		 * Enable EPSG:4326 for csnStreamFlow layer
 		 */
 		var WMS = L.TileLayer.WMS.extend({
+			_status : 'off', // off, loading, on
+			status : function() {
+				return this._status;
+			},
 			getUrl : function() {
 				return this._url;
 			},
@@ -158,7 +186,51 @@
 			includes : [L.Mixin.Events],
 
 			options : {
-				maxClusterRadius : 50
+				maxClusterRadius : 50,
+				elementTag : 'member',
+				positionTag : 'pos',
+				dataCallback : function() {
+				},
+			},
+			_status : 'off',
+			status : function() {
+				return this._status;
+			},
+
+			initialize : function(options) {
+				L.MarkerClusterGroup.prototype.initialize.apply(this, arguments);
+
+				this.on('loading', this._onStatusLoading, this);
+				this.on('load', this._onStatusLoad, this);
+
+				var me = this;
+				if (this.options.url) {
+					this.fire('loading');
+					$.ajax({
+						url : '/proxy',
+						data : {
+							url : this.options.url,
+						},
+						dataType : 'xml',
+						success : function(xml) {
+							var point, data, name, value, options = me.options;
+
+							$(xml).find(options.elementTag).each(function(index, element) {
+								point = $(element).find(options.positionTag).text().split(' ');
+								data = options.data(element);
+								me.addLayer(new CircleMarker(point, data));
+							});
+
+							me.fire('load');
+						}
+					});
+				}
+			},
+			_onStatusLoading : function() {
+				this._status = 'loading';
+			},
+			_onStatusLoad : function() {
+				this._status = 'on';
 			},
 			_defaultIconCreateFunction : function(cluster) {
 				var childCount = cluster.getChildCount();
@@ -376,12 +448,12 @@
 		var map = new Map('map').setView([53, -100], 5);
 
 		// Use MapBox as base layer
-		var baseLayer = L.tileLayer(//
+		var baseLayer = new L.TileLayer(//
 		'http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png'//
 		).addTo(map);
 
 		// nhn:hydrography:hydro1m_l only display at zoom 9
-		var overlay = new WMS("http://ows.geobase.ca/wms/geobase_en", {
+		var layer_Stream_Segments = new WMS("http://ows.geobase.ca/wms/geobase_en", {
 			layers : 'nhn:hydrography:hydro1m_l',
 			format : 'image/png',
 			transparent : true,
@@ -418,94 +490,113 @@
 			}
 		});
 
-		$.ajax({
-			url : '/proxy',
-			data : {
-				url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
-			},
-			dataType : 'xml',
-			success : function(xml) {
-				var markers = new MarkerClusterGroup({
+		var layer_USGS_Surface_Water_Stations = new MarkerClusterGroup({
+			url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
+			type : 'USGS Station',
+			elementTag : 'member',
+			positionTag : 'pos',
+			data : function(element) {
+				var data = {
+					id : $(element).find('featureOfInterest').attr('gml:id'),
+					name : $(element).find('name').text(),
+					organisationName : $(element).find('CharacterString').text(),
 					type : 'USGS Station',
+				};
+				$(element).find('NamedValue').each(function(index, element) {
+					name = $(element).find('name').attr('xlink:title');
+					value = $(element).find('value').text();
+					data[name] = value;
 				});
 
-				var point, data, name, value;
-				$(xml).find('member').each(function(index, element) {
-					point = $(element).find('pos').text().split(' ');
-					data = {
-						id : $(element).find('featureOfInterest').attr('gml:id'),
-						name : $(element).find('name').text(),
-						organisationName : $(element).find('CharacterString').text(),
-						type : 'USGS Station',
-					};
-					$(element).find('NamedValue').each(function(index, element) {
-						name = $(element).find('name').attr('xlink:title');
-						value = $(element).find('value').text();
-						data[name] = value;
-					});
-					markers.addLayer(new CircleMarker(point, data));
-				});
-
-				map.addLayer(markers);
+				return data;
 			}
-		});
+		}).addTo(map);
 
-		$.ajax({
-			url : '/proxy',
-			data : {
-				url : ['http://198.103.103.7/GinService/sos?', //
-				'REQUEST=GetFeatureOfInterest', //
-				'&VERSION=2.0.0', //
-				'&SERVICE=SOS', //
-				'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
-				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
-				.join('')
-			},
-			success : function(xml) {
-				var point, markers = new MarkerClusterGroup({
+		var layer_EC_Surface_Water_Stations = markers = new MarkerClusterGroup({
+			url : ['http://198.103.103.7/GinService/sos?', //
+			'REQUEST=GetFeatureOfInterest', //
+			'&VERSION=2.0.0', //
+			'&SERVICE=SOS', //
+			'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
+			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
+			.join(''),
+			type : 'Surface Water Station',
+			elementTag : 'featureMember',
+			positionTag : 'pos',
+			data : function(element) {
+				return {
+					id : $(element).find('identifier').text(),
+					name : $(element).find('description').text(),
 					type : 'Surface Water Station',
-				});
-
-				$(xml).find('featureMember').each(function(index, element) {
-					point = $(element).find('pos').text().split(' ');
-					markers.addLayer(new CircleMarker(point, {
-						id : $(element).find('identifier').text(),
-						name : $(element).find('description').text(),
-						type : 'Surface Water Station',
-					}));
-				});
-
-				map.addLayer(markers);
-			}
-		});
-
-		$.ajax({
-			url : '/proxy',
-			data : {
-				url : ['http://ngwd-bdnes.cits.nrcan.gc.ca:8080/proxy/GinService/sos/gw?', //
-				'REQUEST=GetFeatureOfInterest', //
-				'&VERSION=2.0.0', //
-				'&SERVICE=SOS', //
-				'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
-				'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
-				.join('')
+				};
 			},
-			success : function(xml) {
-				var point, markers = new MarkerClusterGroup({
+		}).addTo(map);
+
+		var layer_NRCAN_Ground_Water_Stations = new MarkerClusterGroup({
+			url : ['http://ngwd-bdnes.cits.nrcan.gc.ca:8080/proxy/GinService/sos/gw?', //
+			'REQUEST=GetFeatureOfInterest', //
+			'&VERSION=2.0.0', //
+			'&SERVICE=SOS', //
+			'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
+			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
+			.join(''),
+			type : 'Ground Water Station',
+			elementTag : 'featureMember',
+			positionTag : 'pos',
+			data : function(element) {
+				return {
+					id : $(element).find('identifier').text(),
+					name : $(element).find('description').text(),
 					type : 'Ground Water Station',
-				});
-
-				$(xml).find('featureMember').each(function(index, element) {
-					point = $(element).find('pos').text().split(' ');
-					markers.addLayer(new CircleMarker(point, {
-						id : $(element).find('identifier').text(),
-						name : $(element).find('description').text(),
-						type : 'Ground Water Station',
-					}));
-				});
-
-				map.addLayer(markers);
+				}
 			}
+		}).addTo(map);
+
+		LayersControl = L.Control.Layers.extend({
+			_addItem : function(obj) {
+				var label = document.createElement('label'), input, checked = this._map.hasLayer(obj.layer);
+
+				if (obj.overlay) {
+					input = document.createElement('input');
+					input.type = 'checkbox';
+					input.defaultChecked = checked;
+				} else {
+					input = this._createRadioElement('leaflet-base-layers', checked);
+				}
+
+				input.layerId = L.Util.stamp(obj.layer);
+
+				L.DomEvent.on(input, 'click', this._onInputClick, this);
+
+				var name = document.createTextNode(' ' + obj.name);
+				var status = document.createElement('div');
+				status.style.cssFloat = 'right';
+				status.innerHTML = obj.layer.status ? obj.layer.status() : '?';
+				obj.layer.on('loading', function() {
+					status.innerHTML = '...';
+				});
+				obj.layer.on('load', function() {
+					status.innerHTML = 'on';
+				});
+
+				label.appendChild(input);
+				label.appendChild(name);
+				label.appendChild(status);
+
+				var container = obj.overlay ? this._overlaysList : this._baseLayersList;
+				container.appendChild(label);
+			},
 		});
-	})
+
+		new LayersControl({
+			"Tesera map" : baseLayer
+		}, {
+			"NRCAN Ground Water Stations" : layer_NRCAN_Ground_Water_Stations,
+			"EC Surface Water Stations" : layer_EC_Surface_Water_Stations,
+			"USGS Surface Water Stations" : layer_USGS_Surface_Water_Stations,
+			"Stream Segments" : layer_Stream_Segments
+		}, {
+			collapsed : false,
+		}).addTo(map);
+	}); 
 </script>
