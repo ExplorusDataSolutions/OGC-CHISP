@@ -1,14 +1,50 @@
 // Place all the styles related to the service controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
-
+/*
 @media (max-width: 979px) {
   .navbar-fixed-top {
     margin-bottom: 0px;
   }
 }
 
+@media (max-width: 767px) {
+  body {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+}
+
 .container-fluid {
-  padding-left: 0;
-  padding-right: 0;
+  padding-right: 0px;
+  padding-left: 0px;
+}
+
+.navbar .nav.pull-right {
+  margin-right: 20px;
+}
+*/
+
+.layer-status {
+  float: right;
+  width: 12px;
+  height: 12px;
+  border-radius: 7px;
+  border: 1px solid white;
+  margin: 3px;
+}
+
+.layer-status-off {
+  background-color: red;
+  border: 1px solid #c00000;
+}
+
+.layer-status-loading {
+  background-color: yellow;
+  border: 1px solid #c0c000;
+}
+
+.layer-status-on {
+  background-color: green;
+  border: 1px solid #00c000;
 }

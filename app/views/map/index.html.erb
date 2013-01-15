@@ -7,20 +7,29 @@
 </div>
 <script>
 	jQuery(function($) {
-		var AppView = Backbone.View.extend({
-
-		});
-
-		$('#map').parent().removeClass('container');
-
-		$('#list').click(function(e) {
-			if (e.target.tagName == 'TD') {
-				var $tr = $(e.target).closest('tr');
+		var appView = Backbone.View.extend({
+			el : $("body"),
+			events : {
+				"click #list" : "tableClickDelegate",
+			},
+			tableClickDelegate : function(e) {
+				if (e.target.tagName == 'TD') {
+					this.showMarkerPopup(e.target);
+				}
+				if ($(e.target).hasClass('btn-danger')) {
+					this.cancelSubscribe(e.target);
+				}
+				if ($(e.target).hasClass('btn-success')) {
+					this.doSubscribe(e.target);
+				}
+			},
+			showMarkerPopup : function(target) {
+				var $tr = $(target).closest('tr');
 				var id = $tr.attr('id').replace(/marker_/, '');
 				map.openPopup(id);
-			}
-			if ($(e.target).hasClass('btn-danger')) {
-				var $tr = $(e.target).closest('tr'), $tbody = $tr.parent();
+			},
+			cancelSubscribe : function(target) {
+				var $tr = $(target).closest('tr'), $tbody = $tr.parent();
 				var id = $tr.attr('id').replace(/marker_/, '');
 				$tr.remove();
 				if (!$tbody.children().length) {
@@ -35,10 +44,10 @@
 					}
 				}
 				map.closePopup(id);
-				adjustHeight();
-			}
-			if ($(e.target).hasClass('btn-success')) {
-				var $tr = $(e.target).closest('tr');
+				this.adjustMapHeight();
+			},
+			doSubscribe : function(target) {
+				var $tr = $(target).closest('tr');
 				var id = $tr.attr('id').replace(/marker_/, '');
 				var marker = map.getLayerById(id);
 				marker.subscribe(function(markers) {
@@ -58,309 +67,9 @@
 						$tr.find('.btn-success').closest('td').empty();
 					}
 				});
-			}
-		});
-
-		function adjustHeight() {
-			if ($('#list').find('tbody tr').length == 5) {
-				$('#list-container').css('height', $('#list-container').height() + 'px');
-				$('#list-container').css('overflow', 'auto');
-			}
-			var h = $('#list').is(':visible') ? $('#list-container').height() : 0;
-			$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
-			//map && map._onResize();
-		}
-
-		adjustHeight();
-
-		/**
-		 * This is to remove the zoom limit of the whole map caused by the zoom limit
-		 *  of a overlay layer for performance
-		 */
-		var Map = L.Map.extend({
-			_limitZoom : function(zoom) {
-				return zoom;
 			},
-			getLayerById : function(id) {
-				return this._layers[id] || null;
-			},
-			removeLayerById : function(id) {
-				return this.removeLayer(this._layers[id]);
-			},
-			openPopup : function(markerId) {
-				var marker = this.getLayerById(markerId);
-				if (!marker)
-					return;
-				var latlng = marker.getLatLng();
-				var rows = ["Point #" + markerId];
-				for (var key in marker.data) {
-					rows.push(key + ' : ' + marker.data[key]);
-				}
-				var content = rows.join('<br />');
-
-				this._popup || (this._popup = new L.Popup({
-					markerId : markerId,
-					offset : new L.Point(0, -3),
-				}));
-				this._popup.setLatLng(latlng).setContent(content);
-				L.Map.prototype.openPopup.call(this, this._popup);
-			},
-			closePopup : function(markerId) {
-				if (markerId) {
-					if (this._popup && this._popup.options.markerId == markerId) {
-						return this.closePopup();
-					} else {
-						return this;
-					}
-				} else {
-					return L.Map.prototype.closePopup.call(this);
-				}
-			},
-			reproject : function(crs, point, zoom, unbounded) {
-				crs = ( typeof crs === 'undefined' ? this.options.crs : crs);
-				return crs.project(this.unproject(point, zoom, unbounded));
-			},
-		});
-
-		L.TileLayer = L.TileLayer.extend({
-			_status : 'off', // off, loading, on
-			status : function() {
-				return this._status;
-			},
-			originInitialize : L.TileLayer.prototype.initialize,
-			initialize : function(url, options) {
-				this.originInitialize(url, options);
-
-				this.on('loading', this._onStatusLoading, this);
-				this.on('load', this._onStatusLoad, this);
-			},
-			_onStatusLoading : function() {
-				this._status = 'loading';
-			},
-			_onStatusLoad : function() {
-				this._status = 'on';
-			},
-		});
-
-		/**
-		 * Enable EPSG:4326 for csnStreamFlow layer
-		 */
-		var WMS = L.TileLayer.WMS.extend({
-			_status : 'off', // off, loading, on
-			status : function() {
-				return this._status;
-			},
-			getUrl : function() {
-				return this._url;
-			},
-			onAdd : function(map) {
-				var crs = this.options.crs || map.options.crs;
-				delete this.wmsParams.crs;
-
-				var projectionKey = parseFloat(this.wmsParams.version) >= 1.3 ? 'crs' : 'srs';
-				this.wmsParams[projectionKey] = crs.code;
-
-				L.TileLayer.prototype.onAdd.call(this, map);
-			},
-			getTileUrl : function(tilePoint, zoom) {// (Point, Number) -> String
-				var map = this._map, //
-				crs = this.options.crs, //
-				tileSize = this.options.tileSize, //
-				nwPoint = tilePoint.multiplyBy(tileSize), //
-				sePoint = nwPoint.add(new L.Point(tileSize, tileSize)), //
-				nw = map.reproject(crs, nwPoint, zoom, true), //
-				se = map.reproject(crs, sePoint, zoom, true), //
-				bbox = [nw.x, se.y, se.x, nw.y].join(','), //
-				url = L.Util.template(this._url, {
-					s : this._getSubdomain(tilePoint)
-				});
-
-				return url + L.Util.getParamString(this.wmsParams) + "&bbox=" + bbox;
-			},
-		});
-
-		/**
-		 * Customize the cluster marker size
-		 */
-		var MarkerClusterGroup = L.MarkerClusterGroup.extend({
-			includes : [L.Mixin.Events],
-
-			options : {
-				maxClusterRadius : 50,
-				elementTag : 'member',
-				positionTag : 'pos',
-				dataCallback : function() {
-				},
-			},
-			_status : 'off',
-			status : function() {
-				return this._status;
-			},
-
-			initialize : function(options) {
-				L.MarkerClusterGroup.prototype.initialize.apply(this, arguments);
-
-				this.on('loading', this._onStatusLoading, this);
-				this.on('load', this._onStatusLoad, this);
-
-				var me = this;
-				if (this.options.url) {
-					this.fire('loading');
-					$.ajax({
-						url : '/proxy',
-						data : {
-							url : this.options.url,
-						},
-						dataType : 'xml',
-						success : function(xml) {
-							var point, data, name, value, options = me.options;
-
-							$(xml).find(options.elementTag).each(function(index, element) {
-								point = $(element).find(options.positionTag).text().split(' ');
-								data = options.data(element);
-								me.addLayer(new CircleMarker(point, data));
-							});
-
-							me.fire('load');
-						}
-					});
-				}
-			},
-			_onStatusLoading : function() {
-				this._status = 'loading';
-			},
-			_onStatusLoad : function() {
-				this._status = 'on';
-			},
-			_defaultIconCreateFunction : function(cluster) {
-				var childCount = cluster.getChildCount();
-
-				var c = ' marker-cluster-';
-				if (this.type == 'Surface Water Station') {
-					c += 'sw';
-				} else if (this.type == 'Ground Water Station') {
-					c += 'gw';
-				} else {
-					c += 'poi';
-				}
-
-				return new L.DivIcon({
-					html : childCount,
-					className : 'marker-cluster' + c,
-					iconSize : new L.Point(12, 12)
-				});
-			},
-			//Overrides L.MarkerClusterGroup.onAdd
-			onAdd : function(map) {
-				map._initPathRoot();
-				L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
-				L.DomEvent.on(map._pathRoot, 'mouseover', this._onMouseOver, this);
-				L.DomEvent.on(map._pathRoot, 'mouseout', this._onMouseOut, this);
-
-				L.MarkerClusterGroup.prototype.onAdd.apply(this, arguments);
-			},
-			_onMouseClick : function(e) {
-				if (e.target.tagName == 'svg') {
-					// click on map, to bubble
-				} else {
-					this._map.getLayerById(e.target.id).addToTable();
-					L.DomEvent.stopPropagation(e);
-				}
-			},
-			_onMouseOver : function(e) {
-				if (e.target.tagName == 'path') {
-					map.openPopup(e.target.id);
-				}
-			},
-			_onMouseOut : function(e) {
-				if (e.target.tagName == 'path') {
-					map.closePopup(e.target.id);
-				}
-			},
-		});
-
-		/**
-		 * Customize the circle style
-		 */
-		CircleMarker = L.CircleMarker.extend({
-			data : {},
-			normalStyle : {
-				radius : 5,
-				weight : 2,
-				color : '#00ffff',
-				opacity : 1,
-				fill : true,
-				// For mouse easy to hover and click on
-				fillOpacity : 0.1
-			},
-			pendingStyle : {
-				radius : 5,
-				weight : 2,
-				color : '#00ffff',
-				opacity : 1,
-				fill : true,
-				fillColor : '#FAA732',
-				fillOpacity : 1
-			},
-			swStyle : {
-				radius : 5,
-				weight : 2,
-				color : '#ff0000',
-				opacity : 1,
-				fill : true,
-				// For mouse easy to hover and click on
-				fillOpacity : 0.1
-			},
-			gwStyle : {
-				radius : 5,
-				weight : 2,
-				color : '#ffff00',
-				opacity : 1,
-				fill : true,
-				// For mouse easy to hover and click on
-				fillOpacity : 0.1
-			},
-			initialize : function(latlng, data) {
-				this.data = data || {};
-				if (this.data.type == 'Surface Water Station') {
-					L.CircleMarker.prototype.initialize.call(this, latlng, this.swStyle);
-				} else if (this.data.type == 'Ground Water Station') {
-					L.CircleMarker.prototype.initialize.call(this, latlng, this.gwStyle);
-				} else {
-					L.CircleMarker.prototype.initialize.call(this, latlng, this.normalStyle);
-				}
-			},
-			setOpacity : function() {
-			},
-			_initPath : function() {
-				L.CircleMarker.prototype._initPath.apply(this, arguments);
-				this._path.id = L.Util.stamp(this);
-			},
-			_onMouseClick : function(e) {
-				if (this._map.dragging && this._map.dragging.moved()) {
-					return;
-				}
-
-				this._fireMouseEvent(e);
-				//Disable this to enable bubble
-				//L.DomEvent.stopPropagation(e);
-
-				if (this.isFromWFS()) {
-					this.setStatus('pending');
-				}
-			},
-			isFromWFS : function() {
-				return this.data && this.data.id;
-			},
-			setStatus : function(status) {
-				if (status == 'pending') {
-					this.setStyle(this.pendingStyle);
-				} else if (status == 'normal') {
-					this.setStyle(this.normalStyle);
-				}
-			},
-			addToTable : function() {
-				var id = L.Util.stamp(this);
+			showMarkerInfoRow : function(marker) {
+				var id = L.Util.stamp(marker);
 				if ($('#marker_' + id).length) {
 					return;
 				}
@@ -383,7 +92,7 @@
 					].join(''));
 				}
 
-				var latlng = this.getLatLng(), data = this.data;
+				var latlng = marker.getLatLng(), data = marker.data;
 				$('#list').find('tbody').prepend([//
 				'<tr id="marker_' + id + '" class="row">', //
 				'<td>' + id + '</td>', //
@@ -400,97 +109,75 @@
 				'</td>', //
 				'</tr>'].join(''));
 				$('#list').slideDown("fast", function() {
-					adjustHeight();
+					app.adjustMapHeight();
 				});
 			},
-			subscribe : function(callback) {
-				var latlng = this.getLatLng();
-				var data = {
-					REQUEST : "GetFeatureInfo",
-					EXCEPTIONS : "application/vnd.ogc.se_xml",
-					BBOX : map.getBounds().toBBoxString(),
-					SERVICE : "WMS",
-					QUERY_LAYERS : 'w_level',
-					Layers : 'w_level',
-					VERSION : '1.1.1',
-					SRS : 'EPSG:4326',
-					WIDTH : map.getSize().x,
-					HEIGHT : map.getSize().y,
-					y : latlng.lat,
-					x : latlng.lng,
-				};
-				var kvp = [];
-				for (var key in data) {
-					kvp.push(key + '=' + data[key]);
+			adjustMapHeight : function() {
+				if ($('#list').find('tbody tr').length == 5) {
+					$('#list-container').css('height', $('#list-container').height() + 'px');
+					$('#list-container').css('overflow', 'auto');
+				} else {
+					$('#list-container').css('height', 'auto');
+					$('#list-container').css('overflow', 'none');
 				}
-				var url = cdnStreamFLow.getUrl() + '?' + kvp.join('&');
-
-				$.ajax({
-					url : '/proxy',
-					data : {
-						url : url
-					},
-					success : function(xml, status, response) {
-						var $response = $(xml).find('GetFeatureOfInterestResponse');
-						var markers = [];
-						$response.find('featureMember').each(function(index, element) {
-							var pos = $(element).find('pos')[0].textContent.split(' ');
-							var description = $(element).find('description')[0].textContent;
-							markers.push(new L.Marker(pos));
-						})
-						$.isFunction(callback) && callback(markers);
-					}
-				});
+				var h = $('#list').is(':visible') ? $('#list-container').height() : 0;
+				$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
 			}
 		});
 
-		// Inital map location
+		var app = new appView;
+		app.adjustMapHeight();
+
+		// Main map and layers control
 		var map = new Map('map').setView([53, -100], 5);
-
-		// Use MapBox as base layer
-		var baseLayer = new L.TileLayer(//
-		'http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png'//
-		).addTo(map);
-
-		// nhn:hydrography:hydro1m_l only display at zoom 9
-		var layer_Stream_Segments = new WMS("http://ows.geobase.ca/wms/geobase_en", {
-			layers : 'nhn:hydrography:hydro1m_l',
-			format : 'image/png',
-			transparent : true,
-			// force the layer only displayed at zoom level 9
-			maxZoom : 9,
-			minZoom : 9,
+		var layersControl = new LayersControl({}, {}, {
+			collapsed : false
 		}).addTo(map);
 
-		/**
-		 * WMS query
-		 */
+		// Click to add marker and table row
+		var t0, t1, timer;
 		map.on('click', function(e) {
-			var me = this;
-
-			me.t0 = me.t1 || new Date;
-			me.t1 = new Date;
+			t0 = t1 || new Date;
+			t1 = new Date;
 
 			// This timeout value should not be quicker than system double click speed
 			// Or both Zoom in and Add marker function will be activated
-			var timeout = 500, interval = me.t1.getTime() - me.t0.getTime();
+			var timeout = 500, interval = t1.getTime() - t0.getTime();
 			if (50 < interval && interval < timeout) {
 				// a double click, cancel the previous click
-				if (me.timer) {
-					clearTimeout(me.timer);
-					me.timer = null;
+				if (timer) {
+					clearTimeout(timer);
+					timer = null;
 				}
 			} else {
-				me.timer = setTimeout(function() {
-					me.timer = null;
-					new CircleMarker(e.latlng, {
+				timer = setTimeout(function() {
+					timer = null;
+					app.showMarkerInfoRow(new CircleMarker(e.latlng, {
 						type : 'Point of Interest',
-					}).addTo(me).addToTable();
+					}).addTo(map));
 				}, timeout);
 			}
 		});
+		map.on('clickMarker', function(obj) {
+			app.showMarkerInfoRow(obj.marker);
+		});
 
-		var layer_USGS_Surface_Water_Stations = new MarkerClusterGroup({
+		// Use MapBox as base layer
+		layersControl.addBaseLayer(new TileLayer(//
+		'http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png'//
+		).addTo(map), "Tesera map");
+
+		// layer nhn:hydrography:hydro1m_l only display at zoom 9
+		layersControl.addOverlay(new WMS("http://ows.geobase.ca/wms/geobase_en", {
+			layers : 'nhn:hydrography:hydro1m_l',
+			format : 'image/png',
+			transparent : true,
+			maxZoom : 9,
+			minZoom : 9,
+		}).addTo(map), "Stream Segments");
+
+		// layer USGS Surface Water Stations
+		layersControl.addOverlay(new MarkerClusterGroup({
 			url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
 			type : 'USGS Station',
 			elementTag : 'member',
@@ -510,9 +197,10 @@
 
 				return data;
 			}
-		}).addTo(map);
+		}).addTo(map), "USGS Surface Water Stations");
 
-		var layer_EC_Surface_Water_Stations = markers = new MarkerClusterGroup({
+		// layer EC Surface Water Stations
+		layersControl.addOverlay(new MarkerClusterGroup({
 			url : ['http://198.103.103.7/GinService/sos?', //
 			'REQUEST=GetFeatureOfInterest', //
 			'&VERSION=2.0.0', //
@@ -530,9 +218,10 @@
 					type : 'Surface Water Station',
 				};
 			},
-		}).addTo(map);
+		}).addTo(map), "EC Surface Water Stations");
 
-		var layer_NRCAN_Ground_Water_Stations = new MarkerClusterGroup({
+		// layer NRCAN Ground Water Stations
+		layersControl.addOverlay(new MarkerClusterGroup({
 			url : ['http://ngwd-bdnes.cits.nrcan.gc.ca:8080/proxy/GinService/sos/gw?', //
 			'REQUEST=GetFeatureOfInterest', //
 			'&VERSION=2.0.0', //
@@ -550,53 +239,6 @@
 					type : 'Ground Water Station',
 				}
 			}
-		}).addTo(map);
-
-		LayersControl = L.Control.Layers.extend({
-			_addItem : function(obj) {
-				var label = document.createElement('label'), input, checked = this._map.hasLayer(obj.layer);
-
-				if (obj.overlay) {
-					input = document.createElement('input');
-					input.type = 'checkbox';
-					input.defaultChecked = checked;
-				} else {
-					input = this._createRadioElement('leaflet-base-layers', checked);
-				}
-
-				input.layerId = L.Util.stamp(obj.layer);
-
-				L.DomEvent.on(input, 'click', this._onInputClick, this);
-
-				var name = document.createTextNode(' ' + obj.name);
-				var status = document.createElement('div');
-				status.style.cssFloat = 'right';
-				status.innerHTML = obj.layer.status ? obj.layer.status() : '?';
-				obj.layer.on('loading', function() {
-					status.innerHTML = '...';
-				});
-				obj.layer.on('load', function() {
-					status.innerHTML = 'on';
-				});
-
-				label.appendChild(input);
-				label.appendChild(name);
-				label.appendChild(status);
-
-				var container = obj.overlay ? this._overlaysList : this._baseLayersList;
-				container.appendChild(label);
-			},
-		});
-
-		new LayersControl({
-			"Tesera map" : baseLayer
-		}, {
-			"NRCAN Ground Water Stations" : layer_NRCAN_Ground_Water_Stations,
-			"EC Surface Water Stations" : layer_EC_Surface_Water_Stations,
-			"USGS Surface Water Stations" : layer_USGS_Surface_Water_Stations,
-			"Stream Segments" : layer_Stream_Segments
-		}, {
-			collapsed : false,
-		}).addTo(map);
+		}).addTo(map), "NRCAN Ground Water Stations");
 	}); 
 </script>

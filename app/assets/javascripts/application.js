@@ -16,3 +16,11 @@
 //= require leaflet
 //= require leaflet.config
 //= require leaflet.markercluster
+//= require leaflet-map
+//= require leaflet-circlemarker
+//= require leaflet-tilelayer
+//= require leaflet-tilelayer.wms
+//= require leaflet-clustermarker
+//= require leaflet-layerscontrol
+//= require underscore-min
+//= require backbone-min
