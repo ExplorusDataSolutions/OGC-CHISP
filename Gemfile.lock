@@ -57,6 +57,8 @@ GEM
       railties (>= 3.0, < 5.0)
       thor (>= 0.14, < 2.0)
     json (1.7.6)
+    leaflet-markercluster-rails (0.2.1)
+      railties (~> 3.1)
     libxml-ruby (2.4.0)
     mail (2.4.4)
       i18n (>= 0.4.0)
@@ -120,6 +122,7 @@ DEPENDENCIES
   coffee-rails (~> 3.2.1)
   compass-rails
   jquery-rails
+  leaflet-markercluster-rails (~> 0.2.1)
   libxml-ruby
   mail
   rails (= 3.2.11)

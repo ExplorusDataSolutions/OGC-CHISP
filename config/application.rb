@@ -63,6 +63,6 @@ module OGCChisp
     
     # This makes it clear that which plugins are involved
     config.assets.paths << Rails.root.join("lib", "plugins", "leaflet", "dist")
-    config.assets.paths << Rails.root.join("lib", "plugins", "leaflet.markercluster", "dist")
+    config.assets.paths << Rails.root.join("lib", "plugins", "backbone")
   end
 end

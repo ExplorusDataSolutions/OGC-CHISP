@@ -12,8 +12,8 @@
  *= require bootstrap
  *= require bootstrap-responsive
  *= require leaflet
- *= require MarkerCluster
- *= require MarkerCluster.Default
+ *= require leaflet.markercluster
+ *= require leaflet.markercluster.default
  *= require service
  */
 
