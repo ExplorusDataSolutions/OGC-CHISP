@@ -15,7 +15,7 @@
 //= require bootstrap
 //= require leaflet
 //= require leaflet.config
-//= require leaflet.markercluster
+//= require leaflet.markercluster-src
 //= require leaflet-map
 //= require leaflet-circlemarker
 //= require leaflet-tilelayer
