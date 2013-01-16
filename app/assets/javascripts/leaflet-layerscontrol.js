@@ -40,27 +40,28 @@ LayersControl = L.Control.Layers.extend({
 		status.className = 'layer-status layer-status-' + obj.layer.status();
 
 		if (status.className == 'layer-status layer-status-loading') {
-			obj.layer.blinkTimer = setInterval(function() {
+			status.blinkTimer = setInterval(function() {
 				status.style.opacity = Math.sin((new Date).getTime() / 150);
 			}, 100);
 		}
 		obj.layer.on('loading', function() {
 			status.className = 'layer-status layer-status-loading';
-			this.blinkTimer = setInterval(function() {
+			status.blinkTimer && clearInterval(status.blinkTimer);
+			status.blinkTimer = setInterval(function() {
 				status.style.opacity = Math.sin((new Date).getTime() / 100);
 			}, 100);
-		}, obj.layer);
+		});
 		obj.layer.on('load', function() {
 			status.className = 'layer-status layer-status-on';
 			status.style.opacity = 1;
-			clearInterval(this.blinkTimer);
-			this.blinkTimer = null;
+			clearInterval(status.blinkTimer);
+			status.blinkTimer = null;
 		});
 		obj.layer.on('hide', function() {
 			status.className = 'layer-status layer-status-off';
 			status.style.opacity = 1;
-			clearInterval(this.blinkTimer);
-			this.blinkTimer = null;
+			clearInterval(status.blinkTimer);
+			status.blinkTimer = null;
 		});
 
 		label.appendChild(input);
