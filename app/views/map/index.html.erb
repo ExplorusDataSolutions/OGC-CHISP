@@ -171,9 +171,9 @@
 		});
 
 		// Use MapBox as base layer
-		layersControl.addBaseLayer(new TileLayer(//
+		new TileLayer(//
 		'http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png'//
-		).addTo(map), "Tesera map");
+		).addTo(map);
 
 		// layer nhn:hydrography:hydro(1|2|10|20)m_l only display at zoom 5-9
 		layersControl.addOverlay(new WMS("http://ows.geobase.ca/wms/geobase_en", {
