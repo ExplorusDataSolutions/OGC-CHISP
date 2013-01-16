@@ -27,6 +27,8 @@ CircleMarker = L.CircleMarker.extend({
 	},
 	setOpacity : function() {
 	},
+	setZIndexOffset : function() {
+	},
 	_initPath : function() {
 		L.CircleMarker.prototype._initPath.apply(this, arguments);
 		this._path.id = L.Util.stamp(this);
