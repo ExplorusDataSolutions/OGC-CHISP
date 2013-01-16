@@ -175,13 +175,13 @@
 		'http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png'//
 		).addTo(map), "Tesera map");
 
-		// layer nhn:hydrography:hydro1m_l only display at zoom 9
+		// layer nhn:hydrography:hydro(1|2|10|20)m_l only display at zoom 5-9
 		layersControl.addOverlay(new WMS("http://ows.geobase.ca/wms/geobase_en", {
-			layers : 'nhn:hydrography:hydro1m_l',
+			layers : 'nhn:hydrography:hydro20m_l,nhn:hydrography:hydro10m_l,nhn:hydrography:hydro2m_l,nhn:hydrography:hydro1m_l',
 			format : 'image/png',
 			transparent : true,
 			maxZoom : 9,
-			minZoom : 9,
+			minZoom : 5,
 		}).addTo(map), "Stream Segments");
 
 		// layer USGS Surface Water Stations

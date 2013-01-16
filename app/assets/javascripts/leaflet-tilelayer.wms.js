@@ -16,6 +16,13 @@ var WMS = L.TileLayer.WMS.extend({
 		this._status = 'on';
 	},
 
+	initialize : function(url, options) {
+		L.TileLayer.WMS.prototype.initialize.apply(this, arguments);
+
+		this.on('loading', this._onStatusLoading, this);
+		this.on('load', this._onStatusLoad, this);
+	},
+
 	getUrl : function() {
 		return this._url;
 	},
@@ -45,16 +52,18 @@ var WMS = L.TileLayer.WMS.extend({
 
 		return url + L.Util.getParamString(this.wmsParams) + "&bbox=" + bbox;
 	},
-	
-	_update: function (e) {
-		if (this._map._panTransition && this._map._panTransition._inProgress) { return; }
 
-		var zoom     = this._map.getZoom();
+	_update : function(e) {
+		if (this._map._panTransition && this._map._panTransition._inProgress) {
+			return;
+		}
+
+		var zoom = this._map.getZoom();
 		if (zoom > this.options.maxZoom || zoom < this.options.minZoom) {
 			this._status = 'off';
 			this.fire('hide');
 		}
-		
+
 		return L.TileLayer.WMS.prototype._update.apply(this, arguments);
 	},
 });
