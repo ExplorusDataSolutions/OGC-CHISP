@@ -45,4 +45,16 @@ var WMS = L.TileLayer.WMS.extend({
 
 		return url + L.Util.getParamString(this.wmsParams) + "&bbox=" + bbox;
 	},
+	
+	_update: function (e) {
+		if (this._map._panTransition && this._map._panTransition._inProgress) { return; }
+
+		var zoom     = this._map.getZoom();
+		if (zoom > this.options.maxZoom || zoom < this.options.minZoom) {
+			this._status = 'off';
+			this.fire('hide');
+		}
+		
+		return L.TileLayer.WMS.prototype._update.apply(this, arguments);
+	},
 });

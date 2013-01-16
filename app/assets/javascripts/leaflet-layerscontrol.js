@@ -2,6 +2,11 @@
  * Customized Layers Control
  */
 LayersControl = L.Control.Layers.extend({
+	_initLayout : function() {
+		L.Control.Layers.prototype._initLayout.apply(this, arguments);
+
+		this._form.style.marginBottom = '0px';
+	},
 	/**
 	 * Support display layer status
 	 */
@@ -9,6 +14,7 @@ LayersControl = L.Control.Layers.extend({
 		var label = document.createElement('label'), input, checked = this._map.hasLayer(obj.layer);
 		label.style.fontSize = '12px';
 		label.style.whiteSpace = 'nowrap';
+		label.style.marginBottom = '0px';
 
 		if (obj.overlay) {
 			label.className = 'checkbox';
@@ -25,7 +31,7 @@ LayersControl = L.Control.Layers.extend({
 		L.DomEvent.on(input, 'click', this._onInputClick, this);
 
 		var name = document.createElement('span');
-		name.innerHTML = obj.name;
+		name.innerHTML = obj.name + " &#160;";
 		if (obj.layer.options.style) {
 			name.style.color = obj.layer.options.style.color;
 		}
@@ -46,6 +52,12 @@ LayersControl = L.Control.Layers.extend({
 		}, obj.layer);
 		obj.layer.on('load', function() {
 			status.className = 'layer-status layer-status-on';
+			status.style.opacity = 1;
+			clearInterval(this.blinkTimer);
+			this.blinkTimer = null;
+		});
+		obj.layer.on('hide', function() {
+			status.className = 'layer-status layer-status-off';
 			status.style.opacity = 1;
 			clearInterval(this.blinkTimer);
 			this.blinkTimer = null;
