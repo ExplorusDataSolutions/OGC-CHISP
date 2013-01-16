@@ -37,16 +37,7 @@ ul.nav li:hover > ul.dropdown-menu {
   text-align: center;
   font-size: 9px;
   line-height: 12px;
-  border: 2px solid #00ffff;
   -webkit-text-size-adjust: none;
-}
-
-.marker-cluster-sw {
-	border: 2px solid #ff0000;
-}
-
-.marker-cluster-gw {
-	border: 2px solid #ffff00;
 }
 
 

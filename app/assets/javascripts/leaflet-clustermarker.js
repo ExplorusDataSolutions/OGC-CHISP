@@ -5,6 +5,7 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 	includes : [L.Mixin.Events],
 
 	options : {
+		style : {},
 		maxClusterRadius : 50,
 		elementTag : 'member',
 		positionTag : 'pos',
@@ -51,7 +52,7 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 					$(xml).find(options.elementTag).each(function(index, element) {
 						point = $(element).find(options.positionTag).text().split(' ');
 						data = options.data(element);
-						me.addLayer(new CircleMarker(point, data));
+						me.addLayer(new CircleMarker(point, data, options.style));
 					});
 
 					me.fire('load');
@@ -66,19 +67,11 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 	_defaultIconCreateFunction : function(cluster) {
 		var childCount = cluster.getChildCount();
 
-		var c = ' marker-cluster-';
-		if (this.type == 'Surface Water Station') {
-			c += 'sw';
-		} else if (this.type == 'Ground Water Station') {
-			c += 'gw';
-		} else {
-			c += 'poi';
-		}
-
-		return new L.DivIcon({
+		return new MarkerClusterGroup.Icon({
 			html : childCount,
-			className : 'marker-cluster' + c,
-			iconSize : new L.Point(12, 12)
+			className : 'marker-cluster',
+			iconSize : new L.Point(12, 12),
+			color : cluster._group.options.style.color,
 		});
 	},
 
@@ -118,3 +111,12 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 	},
 });
 
+MarkerClusterGroup.Icon = L.DivIcon.extend({
+	createIcon : function() {
+		var div = L.DivIcon.prototype.createIcon.apply(this, arguments);
+
+		div.style.border = '2px solid ' + this.options.color;
+
+		return div;
+	},
+});

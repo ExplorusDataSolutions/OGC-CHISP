@@ -154,6 +154,14 @@
 					timer = null;
 					app.showMarkerInfoRow(new CircleMarker(e.latlng, {
 						type : 'Point of Interest',
+					}, {
+						radius : 5,
+						weight : 2,
+						color : '#00ffff',
+						opacity : 1,
+						fill : true,
+						// For mouse easy to hover and click on
+						fillOpacity : 0.1
 					}).addTo(map));
 				}, timeout);
 			}
@@ -178,8 +186,10 @@
 
 		// layer USGS Surface Water Stations
 		layersControl.addOverlay(new MarkerClusterGroup({
+			style : {
+				color : '#6600ff', // for svg marker and cluster marker
+			},
 			url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
-			type : 'USGS Station',
 			elementTag : 'member',
 			positionTag : 'pos',
 			data : function(element) {
@@ -187,7 +197,7 @@
 					id : $(element).find('featureOfInterest').attr('gml:id'),
 					name : $(element).find('name').text(),
 					organisationName : $(element).find('CharacterString').text(),
-					type : 'USGS Station',
+					type : 'USGS Surface Water',
 				};
 				$(element).find('NamedValue').each(function(index, element) {
 					name = $(element).find('name').attr('xlink:title');
@@ -197,10 +207,13 @@
 
 				return data;
 			}
-		}).addTo(map), "USGS Surface Water Stations");
+		}).addTo(map), "USGS Surface Water");
 
 		// layer EC Surface Water Stations
 		layersControl.addOverlay(new MarkerClusterGroup({
+			style : {
+				color : '#ff6600', // for svg marker and cluster marker
+			},
 			url : ['http://198.103.103.7/GinService/sos?', //
 			'REQUEST=GetFeatureOfInterest', //
 			'&VERSION=2.0.0', //
@@ -208,20 +221,23 @@
 			'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
 			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 			.join(''),
-			type : 'Surface Water Station',
+			type : 'EC Surface Water',
 			elementTag : 'featureMember',
 			positionTag : 'pos',
 			data : function(element) {
 				return {
 					id : $(element).find('identifier').text(),
 					name : $(element).find('description').text(),
-					type : 'Surface Water Station',
+					type : 'EC Surface Water',
 				};
 			},
-		}).addTo(map), "EC Surface Water Stations");
+		}).addTo(map), "EC Surface Water");
 
 		// layer NRCAN Ground Water Stations
 		layersControl.addOverlay(new MarkerClusterGroup({
+			style : {
+				color : '#3399ff', // for svg marker and cluster marker
+			},
 			url : ['http://ngwd-bdnes.cits.nrcan.gc.ca:8080/proxy/GinService/sos/gw?', //
 			'REQUEST=GetFeatureOfInterest', //
 			'&VERSION=2.0.0', //
@@ -229,16 +245,15 @@
 			'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
 			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 			.join(''),
-			type : 'Ground Water Station',
 			elementTag : 'featureMember',
 			positionTag : 'pos',
 			data : function(element) {
 				return {
 					id : $(element).find('identifier').text(),
 					name : $(element).find('description').text(),
-					type : 'Ground Water Station',
+					type : 'NRCAN Ground Water', // to be displayed in popup
 				}
 			}
-		}).addTo(map), "NRCAN Ground Water Stations");
+		}).addTo(map), "NRCAN Ground Water");
 	}); 
 </script>

@@ -3,15 +3,13 @@
  */
 CircleMarker = L.CircleMarker.extend({
 	data : {},
-	originStyle : null,
-	normalStyle : {
+	originStyle : {
 		radius : 5,
 		weight : 2,
-		color : '#00ffff',
+		color : '#ff0000',
 		opacity : 1,
 		fill : true,
-		// For mouse easy to hover and click on
-		fillOpacity : 0.1
+		fillOpacity : 0.1,// For mouse easy to hover and click on
 	},
 	pendingStyle : {
 		radius : 5,
@@ -22,33 +20,9 @@ CircleMarker = L.CircleMarker.extend({
 		fillColor : '#FAA732',
 		fillOpacity : 1
 	},
-	swStyle : {
-		radius : 5,
-		weight : 2,
-		color : '#ff0000',
-		opacity : 1,
-		fill : true,
-		// For mouse easy to hover and click on
-		fillOpacity : 0.1
-	},
-	gwStyle : {
-		radius : 5,
-		weight : 2,
-		color : '#ffff00',
-		opacity : 1,
-		fill : true,
-		// For mouse easy to hover and click on
-		fillOpacity : 0.1
-	},
-	initialize : function(latlng, data) {
+	initialize : function(latlng, data, style) {
 		this.data = data || {};
-		if (this.data.type == 'Surface Water Station') {
-			this.originStyle = this.swStyle;
-		} else if (this.data.type == 'Ground Water Station') {
-			this.originStyle = this.gwStyle;
-		} else {
-			this.originStyle = this.normalStyle;
-		}
+		L.Util.extend(this.originStyle, style);
 		L.CircleMarker.prototype.initialize.call(this, latlng, this.originStyle);
 	},
 	setOpacity : function() {
