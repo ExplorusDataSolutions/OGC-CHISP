@@ -189,7 +189,25 @@
 			style : {
 				color : '#6600ff', // for svg marker and cluster marker
 			},
-			url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
+			url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature',
+			xml : ['<?xml version="1.0" ?>', //
+			'<wfs:GetFeature version="1.1.0" service="WFS" maxFeatures="3"', //
+			'    xmlns:wfs="http://www.opengis.net/wfs"', //
+			'    xmlns:ogc="http://www.opengis.net/ogc"', //
+			'    xmlns:gml="http://www.opengis.net/gml"', //
+			'    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">', //
+			'  <wfs:Query>', //
+			'    <ogc:Filter>', //
+			'      <ogc:BBOX>', //
+			'        <gml:Envelope>', //
+			'          <gml:lowerCorner>-101.904947 48.01835</gml:lowerCorner>', //
+			'          <gml:upperCorner>-89.069706 60.008292</gml:upperCorner>', //
+			'        </gml:Envelope>', //
+			'      </ogc:BBOX>', //
+			'    </ogc:Filter>', //
+			'  </wfs:Query>', //
+			'</wfs:GetFeature>' //
+			].join(''),
 			elementTag : 'member',
 			positionTag : 'pos',
 			data : function(element) {

@@ -44,6 +44,7 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 				url : '/proxy',
 				data : {
 					url : this.options.url,
+					xml : this.options.xml,
 				},
 				dataType : 'xml',
 				success : function(xml) {
