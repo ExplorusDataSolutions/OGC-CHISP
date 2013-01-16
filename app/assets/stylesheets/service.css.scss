@@ -1,7 +1,7 @@
 // Place all the styles related to the service controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
-/*
+
 @media (max-width: 979px) {
   .navbar-fixed-top {
     margin-bottom: 0px;
@@ -9,17 +9,12 @@
 }
 
 @media (max-width: 767px) {
-  body {
-    padding-left: 0px;
-    padding-right: 0px;
+  #map {
+    margin-left: -20px;
+    margin-right: -20px;
   }
 }
 
-.container-fluid {
-  padding-right: 0px;
-  padding-left: 0px;
-}
-*/
 .navbar .nav.pull-right {
   margin-right: 20px;
 }
