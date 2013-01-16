@@ -250,28 +250,5 @@
 				};
 			},
 		}).addTo(map), "EC Surface Water");
-
-		// layer NRCAN Ground Water Stations
-		layersControl.addOverlay(new MarkerClusterGroup({
-			style : {
-				color : '#3399ff', // for svg marker and cluster marker
-			},
-			url : ['http://ngwd-bdnes.cits.nrcan.gc.ca:8080/proxy/GinService/sos/gw?', //
-			'REQUEST=GetFeatureOfInterest', //
-			'&VERSION=2.0.0', //
-			'&SERVICE=SOS', //
-			'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
-			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
-			.join(''),
-			elementTag : 'featureMember',
-			positionTag : 'pos',
-			data : function(element) {
-				return {
-					id : $(element).find('identifier').text(),
-					name : $(element).find('description').text(),
-					type : 'NRCAN Ground Water', // to be displayed in popup
-				}
-			}
-		}).addTo(map), "NRCAN Ground Water");
 	}); 
 </script>
