@@ -43,7 +43,7 @@ LayersControl = L.Control.Layers.extend({
 			this.blinkTimer = setInterval(function() {
 				status.style.opacity = Math.sin((new Date).getTime() / 100);
 			}, 100);
-		});
+		}, obj.layer);
 		obj.layer.on('load', function() {
 			status.className = 'layer-status layer-status-on';
 			status.style.opacity = 1;
