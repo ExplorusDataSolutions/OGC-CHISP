@@ -22,7 +22,7 @@ CircleMarker = L.CircleMarker.extend({
 	},
 	initialize : function(latlng, data, style) {
 		this.data = data || {};
-		this.originStyle = L.Util.extend({}, this.originStyle, style);
+		this.originStyle = L.Util.extend({}, this.originStyle, style || this.pendingStyle);
 		L.CircleMarker.prototype.initialize.call(this, latlng, this.originStyle);
 	},
 	setOpacity : function() {

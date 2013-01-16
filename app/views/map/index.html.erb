@@ -154,14 +154,6 @@
 					timer = null;
 					app.showMarkerInfoRow(new CircleMarker(e.latlng, {
 						type : 'Point of Interest',
-					}, {
-						radius : 5,
-						weight : 2,
-						color : '#00ffff',
-						opacity : 1,
-						fill : true,
-						// For mouse easy to hover and click on
-						fillOpacity : 0.1
 					}).addTo(map));
 				}, timeout);
 			}
