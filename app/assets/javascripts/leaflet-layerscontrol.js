@@ -11,11 +11,20 @@ LayersControl = L.Control.Layers.extend({
 	 * Support display layer status
 	 */
 	_addItem : function(obj) {
+		var container = obj.overlay ? this._overlaysList : this._baseLayersList;
+		if (container.childNodes.length == 0) {
+			container.innerHTML = '<table width="100%"></table>';
+		}
+		var tb = container.childNodes[0];
+
 		var label = document.createElement('label'), input, checked = this._map.hasLayer(obj.layer);
 		label.style.fontSize = '12px';
-		label.style.whiteSpace = 'nowrap';
 		label.style.marginBottom = '0px';
-		label.style.paddingLeft = '0px';
+		label.style.padding = '0 10px 0 5px';
+		if (obj.layer.options.style) {
+			label.style.color = obj.layer.options.style.color;
+		}
+		label.innerHTML = obj.name;
 
 		if (obj.overlay) {
 			label.className = 'checkbox';
@@ -26,22 +35,13 @@ LayersControl = L.Control.Layers.extend({
 			label.className = 'radio';
 			input = this._createRadioElement('leaflet-base-layers', checked);
 		}
-		input.style.cssFloat = 'right';
-		input.style.marginLeft = '0px';
-
+		input.style.marginTop = '0px';
+		input.style.top = '0px';
 		input.layerId = L.Util.stamp(obj.layer);
-
 		L.DomEvent.on(input, 'click', this._onInputClick, this);
 
-		var name = document.createElement('span');
-		name.innerHTML = obj.name + " &#160;";
-		if (obj.layer.options.style) {
-			name.style.color = obj.layer.options.style.color;
-		}
-
-		var status = document.createElement('span');
+		var status = document.createElement('div');
 		status.className = 'layer-status layer-status-' + obj.layer.status();
-
 		if (status.className == 'layer-status layer-status-loading') {
 			status.blinkTimer = setInterval(function() {
 				status.style.opacity = Math.sin((new Date).getTime() / 150);
@@ -67,16 +67,9 @@ LayersControl = L.Control.Layers.extend({
 			status.blinkTimer = null;
 		});
 
-		label.appendChild(input);
-		label.appendChild(name);
-
-		var tb = document.createElement('table');
-		tb.style.width = '100%';
-		var tr = tb.insertRow(0);
+		var tr = tb.insertRow(-1);
 		tr.insertCell(0).appendChild(status);
 		tr.insertCell(1).appendChild(label);
-
-		var container = obj.overlay ? this._overlaysList : this._baseLayersList;
-		container.appendChild(tb);
+		tr.insertCell(2).appendChild(input);
 	},
 });
