@@ -16,10 +16,12 @@
 //= require leaflet
 //= require leaflet.config
 //= require leaflet.markercluster-src
+//= require leaflet.draw
 //= require leaflet-map
 //= require leaflet-circlemarker
 //= require leaflet-tilelayer
 //= require leaflet-tilelayer.wms
 //= require leaflet-clustermarker
 //= require leaflet-layerscontrol
+//= require leaflet-draw
 //= require backbone-rails

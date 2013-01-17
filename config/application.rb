@@ -62,7 +62,6 @@ module OGCChisp
     config.exceptions_app = self.routes
     
     # This makes it clear that which plugins are involved
-    config.assets.paths << Rails.root.join("lib", "plugins", "leaflet", "dist")
-    config.assets.paths << Rails.root.join("lib", "plugins", "backbone")
+    config.assets.paths << Rails.root.join("lib", "plugins", "Leaflet.draw", "dist")
   end
 end

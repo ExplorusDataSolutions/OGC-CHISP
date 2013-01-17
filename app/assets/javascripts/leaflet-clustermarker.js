@@ -36,15 +36,35 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 		this.on('loading', this._onStatusLoading, this);
 		this.on('load', this._onStatusLoad, this);
 
+		this.load();
+	},
+
+	load : function() {
 		var me = this;
 		if (me.options.url) {
 			me.fire('loading');
 
+			var url = this.options.url;
+			var xml = this.options.xml;
+			var bounds = this.options.bounds;
+			if (url) {
+				url = url.replace('{bBoxString}', bounds.toBBoxString());
+			}
+			if (xml) {
+				xml = xml.replace(//
+				/<gml:lowerCorner>.*?<\/gml:lowerCorner>/, //
+				'<gml:lowerCorner>' + bounds.getSouthWest().lng + ' ' + bounds.getSouthWest().lat + '</gml:lowerCorner>'//
+				).replace(//
+				/<gml:upperCorner>.*?<\/gml:upperCorner>/, //
+				'<gml:upperCorner>' + bounds.getNorthEast().lng + ' ' + bounds.getNorthEast().lat + '</gml:upperCorner>'//
+				);
+			}
+
 			$.ajax({
 				url : '/proxy',
 				data : {
-					url : this.options.url,
-					xml : this.options.xml,
+					url : url,
+					xml : xml,
 				},
 				dataType : 'xml',
 				success : function(xml) {
@@ -60,6 +80,13 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 				}
 			});
 		}
+	},
+
+	_update : function(bounds) {
+		this.clearLayers();
+
+		this.options.bounds = bounds;
+		this.load();
 	},
 
 	/**

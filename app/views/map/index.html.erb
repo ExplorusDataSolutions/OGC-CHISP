@@ -14,6 +14,25 @@
 			events : {
 				"click #list" : "tableClickDelegate",
 			},
+			recognizeMapClickAndDblclick : function(latlng, interval, staticObj) {
+				// This timeout value should not be quicker than system double click speed
+				// Or both Zoom in and Add marker function will be activated
+				var app = this, timeout = 500;
+				if (50 < interval && interval < timeout) {
+					// a double click, cancel the previous click
+					if (staticObj.timer) {
+						clearTimeout(staticObj.timer);
+						staticObj.timer = null;
+					}
+				} else {
+					staticObj.timer = setTimeout(function() {
+						staticObj.timer = null;
+						app.showMarkerInfoRow(new CircleMarker(latlng, {
+							type : 'Point of Interest',
+						}).addTo(map));
+					}, timeout);
+				}
+			},
 			tableClickDelegate : function(e) {
 				if (e.target.tagName == 'TD') {
 					this.showMarkerPopup(e.target);
@@ -130,43 +149,36 @@
 		var app = new appView;
 		app.adjustMapHeight();
 
-		// Main map and layers control
+		/**
+		 * Map and controls
+		 */
 		var map = new Map('map').setView([53, -100], 5);
+		var bounds = new L.LatLngBounds([48.01835, -101.904947], [60.008292, -89.069706]);
 		var layersControl = new LayersControl({}, {}, {
 			collapsed : false
 		}).addTo(map);
+		var drawControl = new Draw().addTo(map);
 
-		// Click to add marker and table row
-		var t0, t1, timer;
-		map.on('click', function(e) {
-			t0 = t1 || new Date;
-			t1 = new Date;
-
-			// This timeout value should not be quicker than system double click speed
-			// Or both Zoom in and Add marker function will be activated
-			var timeout = 500, interval = t1.getTime() - t0.getTime();
-			if (50 < interval && interval < timeout) {
-				// a double click, cancel the previous click
-				if (timer) {
-					clearTimeout(timer);
-					timer = null;
-				}
-			} else {
-				timer = setTimeout(function() {
-					timer = null;
-					app.showMarkerInfoRow(new CircleMarker(e.latlng, {
-						type : 'Point of Interest',
-					}).addTo(map));
-				}, timeout);
+		/**
+		 * Map evnets
+		 */
+		map.on('click', function() {
+			var t0, t1, staticObj = {};
+			return function(e) {
+				t0 = t1 || new Date, t1 = new Date, interval = t1.getTime() - t0.getTime();
+				app.recognizeMapClickAndDblclick(e.latlng, interval, staticObj);
 			}
-		});
+		}());
 		map.on('clickMarker', function(obj) {
 			app.showMarkerInfoRow(obj.marker);
 		});
 
+		/**
+		 * Map layers
+		 */
 		// Use MapBox as base layer
 		new TileLayer(//
-		'http://{s}.tiles.mapbox.com/v2/tesera.map-lmy2wpqu/{z}/{x}/{y}.png'//
+		'http://{s}.tiles.mapbox.com/v3/tesera.map-1y5jmthi/{z}/{x}/{y}.png'//
 		).addTo(map);
 
 		// layer nhn:hydrography:hydro(1|2|10|20)m_l only display at zoom 5-9
@@ -202,6 +214,7 @@
 			'  </wfs:Query>', //
 			'</wfs:GetFeature>' //
 			].join(''),
+			bounds : bounds,
 			elementTag : 'member',
 			positionTag : 'pos',
 			data : function(element) {
@@ -230,9 +243,10 @@
 			'REQUEST=GetFeatureOfInterest', //
 			'&VERSION=2.0.0', //
 			'&SERVICE=SOS', //
-			'&spatialFilter=om:featureOfInterest/*/sams:shape,-101.904947,48.01835,-89.069706,60.008292', //
+			'&spatialFilter=om:featureOfInterest/*/sams:shape,{bBoxString}', //
 			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 			.join(''),
+			bounds : bounds,
 			type : 'EC Surface Water',
 			elementTag : 'featureMember',
 			positionTag : 'pos',
