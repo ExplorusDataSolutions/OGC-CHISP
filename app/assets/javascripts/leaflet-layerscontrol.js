@@ -15,6 +15,7 @@ LayersControl = L.Control.Layers.extend({
 		label.style.fontSize = '12px';
 		label.style.whiteSpace = 'nowrap';
 		label.style.marginBottom = '0px';
+		label.style.paddingLeft = '0px';
 
 		if (obj.overlay) {
 			label.className = 'checkbox';
@@ -25,6 +26,8 @@ LayersControl = L.Control.Layers.extend({
 			label.className = 'radio';
 			input = this._createRadioElement('leaflet-base-layers', checked);
 		}
+		input.style.cssFloat = 'right';
+		input.style.marginLeft = '0px';
 
 		input.layerId = L.Util.stamp(obj.layer);
 
@@ -70,8 +73,8 @@ LayersControl = L.Control.Layers.extend({
 		var tb = document.createElement('table');
 		tb.style.width = '100%';
 		var tr = tb.insertRow(0);
-		tr.insertCell(0).appendChild(label);
-		tr.insertCell(1).appendChild(status);
+		tr.insertCell(0).appendChild(status);
+		tr.insertCell(1).appendChild(label);
 
 		var container = obj.overlay ? this._overlaysList : this._baseLayersList;
 		container.appendChild(tb);
