@@ -35,4 +35,8 @@ class ApplicationController < ActionController::Base
     r = false
     end
   end
+  
+  def logined_email
+    session[:login_email]
+  end
 end

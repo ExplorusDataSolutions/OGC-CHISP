@@ -41,3 +41,28 @@
   background-color: green;
   border: 1px solid #00c000;
 }
+
+#list-station, #list-point {
+  font-size: 12px;
+  margin-bottom: 0px;
+}
+
+#list-station th, #list-point th {
+  padding: 0 5px;
+}
+
+#list-container input {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  width: auto;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.alert-success, .alert-error {
+   position: absolute;
+   width: 40%;
+   left: 50%;
+   top: 30%;
+   margin-left: -20%;
+}
