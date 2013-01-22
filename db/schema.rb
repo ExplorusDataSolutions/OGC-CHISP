@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121220062225) do
+ActiveRecord::Schema.define(:version => 20130121204826) do
 
   create_table "api_keys", :force => true do |t|
     t.string   "key"
@@ -29,6 +29,20 @@ ActiveRecord::Schema.define(:version => 20121220062225) do
     t.datetime "created_at",        :null => false
     t.datetime "updated_at",        :null => false
     t.string   "api_key"
+  end
+
+  create_table "subscriptions", :force => true do |t|
+    t.string   "email"
+    t.float    "sw_level_threshold"
+    t.float    "sw_flow_threshold"
+    t.integer  "frequency"
+    t.float    "lat",                :limit => 53
+    t.float    "lng",                :limit => 53
+    t.string   "station_id"
+    t.string   "poi_type"
+    t.string   "status"
+    t.datetime "created_at",                       :null => false
+    t.datetime "updated_at",                       :null => false
   end
 
 end

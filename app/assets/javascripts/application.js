@@ -21,6 +21,7 @@
 //= require leaflet-circlemarker
 //= require leaflet-tilelayer
 //= require leaflet-tilelayer.wms
+//= require leaflet-markergroup
 //= require leaflet-clustermarker
 //= require leaflet-layerscontrol
 //= require leaflet-draw

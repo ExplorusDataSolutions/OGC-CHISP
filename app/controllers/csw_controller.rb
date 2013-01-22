@@ -3,13 +3,14 @@ class CswController < ApplicationController
   end
 
   def proxy
-    self.content_type = "application/xml"
+    require 'net/http'
     uri = URI.parse(params['url'])
 
     if params["xml"]
-      response_body = Net::HTTP.post_form(uri, { "xml" => params["xml"] }).body
+      response = Net::HTTP.post_form(uri, { "xml" => params["xml"] })
+    elsif params["data"]
+      response = Net::HTTP.post_form(uri, params["data"])
     else
-      require 'net/http'
       response = Net::HTTP.get_response(uri)
 
       if response.code == "200"
@@ -23,7 +24,13 @@ class CswController < ApplicationController
       end
     end
 
-    self.response_body = response_body
+    if response.nil?
+      #self.content_type = response["content-type"]
+      else
+      self.content_type = response["content-type"]
+    end
+
+    self.response_body = response.body
   end
 
   def get_capabilities

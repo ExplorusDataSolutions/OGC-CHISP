@@ -22,8 +22,12 @@ CircleMarker = L.CircleMarker.extend({
 	},
 	initialize : function(latlng, data, style) {
 		this.data = data || {};
-		this.originStyle = L.Util.extend({}, this.originStyle, style || this.pendingStyle);
-		L.CircleMarker.prototype.initialize.call(this, latlng, this.originStyle);
+		this.originStyle = L.Util.extend({}, this.originStyle, style);
+		if (data.status == 'pending') {
+			L.CircleMarker.prototype.initialize.call(this, latlng, this.pendingStyle);
+		} else {
+			L.CircleMarker.prototype.initialize.call(this, latlng, this.originStyle);
+		}
 	},
 	setOpacity : function() {
 	},
@@ -42,12 +46,13 @@ CircleMarker = L.CircleMarker.extend({
 		//Disable this to enable bubble
 		//L.DomEvent.stopPropagation(e);
 
-		if (this.isFromWFS()) {
-			this.setStatus('pending');
-		}
+		this.setStatus('pending');
 	},
 	isFromWFS : function() {
 		return this.data && this.data.id;
+	},
+	isPending : function() {
+		return this.data && this.data.status == 'pending';
 	},
 	setStatus : function(status) {
 		if (status == 'pending') {
@@ -56,43 +61,79 @@ CircleMarker = L.CircleMarker.extend({
 			this.setStyle(this.originStyle);
 		}
 	},
-	subscribe : function(callback) {
+	subscribe : function(data, callback) {
 		var latlng = this.getLatLng();
-		var data = {
-			REQUEST : "GetFeatureInfo",
-			EXCEPTIONS : "application/vnd.ogc.se_xml",
-			BBOX : map.getBounds().toBBoxString(),
-			SERVICE : "WMS",
-			QUERY_LAYERS : 'w_level',
-			Layers : 'w_level',
-			VERSION : '1.1.1',
-			SRS : 'EPSG:4326',
-			WIDTH : map.getSize().x,
-			HEIGHT : map.getSize().y,
-			y : latlng.lat,
-			x : latlng.lng,
-		};
-		var kvp = [];
-		for (var key in data) {
-			kvp.push(key + '=' + data[key]);
-		}
-		var url = cdnStreamFLow.getUrl() + '?' + kvp.join('&');
 
+		/**
+		 * @see https://github.com/tesera/OGC-CHISP/wiki/GIS-FCU-Subscription-Broker-API
+		 */
+		// var url = "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=subscribe"
+		// A temporary substitution
+		var url = location.origin + "/GIS-SFU-subscribe"
+		data = data || {};
+		data.id = this.data.poi_id || 0;
+		data.status = this.data.status || 'pending';
+		data.lat = latlng.lat.toFixed(8);
+		data.lng = latlng.lng.toFixed(8);
+
+		var me = this;
 		$.ajax({
 			url : '/proxy',
 			data : {
-				url : url
+				url : url,
+				data : data,
+				format : 'json',
 			},
-			success : function(xml, status, response) {
-				var $response = $(xml).find('GetFeatureOfInterestResponse');
-				var markers = [];
-				$response.find('featureMember').each(function(index, element) {
-					var pos = $(element).find('pos')[0].textContent.split(' ');
-					var description = $(element).find('description')[0].textContent;
-					markers.push(new L.Marker(pos));
-				})
-				$.isFunction(callback) && callback(markers);
-			}
+			dataType : 'json',
+			success : function(json) {
+				if (json.poi_id) {
+					me.data.poi_id = json.poi_id;
+					me.data.status = json.status;
+				}
+				typeof callback == 'function' && callback(data);
+			},
+			error : function(xhr, textStatus, e) {
+				typeof callback == 'function' && callback({
+					error : textStatus || e
+				});
+			},
+		});
+	},
+	cancelSubscribe : function(callback) {
+		if (!this.data.poi_id || this.data.poi_id == 0) {
+			this.setStatus('origin');
+			typeof callback == 'function' && callback({});
+			return;
+		}
+		var url = location.origin + "/GIS-SFU-cancel-subscribe"
+		var data = {
+			id : this.data.poi_id || 0
+		}
+
+		var me = this;
+		$.ajax({
+			url : '/proxy',
+			data : {
+				url : url,
+				data : data,
+			},
+			dataType : 'json',
+			success : function(json) {
+				if (me.isFromWFS()) {
+					me.setStatus('origin');
+				} else if (json.status == 'invalid') {
+					me.setStatus('origin');
+				} else {
+					me._map.removeLayer(me);
+				}
+
+				typeof callback == 'function' && callback(json);
+			},
+			error : function(xhr, textStatus, e) {
+				typeof callback == 'function' && callback({
+					error : textStatus || e
+				});
+			},
 		});
 	}
 });

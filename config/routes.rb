@@ -29,6 +29,9 @@ OGCChisp::Application.routes.draw do
 
   # map controller
   match '/map' => 'map#index'
+  match '/GIS-SFU-subscribe' => 'map#subscribe'
+  match '/GIS-SFU-subscription' => 'map#subscription'
+  match '/GIS-SFU-cancel-subscribe' => 'map#cancel_subscribe'
   
   # cache controller
   match '/svc/generate-key' => 'cache#api_key'
