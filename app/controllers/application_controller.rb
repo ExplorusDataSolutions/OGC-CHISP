@@ -12,10 +12,15 @@ class ApplicationController < ActionController::Base
 
   #
   def csw_proxy
-    csw_params = request.fullpath.split('?')[1] + "&_=" + rand(10000).to_s
+    require 'net/http'
+    uri = URI("#{csw_service_url}?#{request.query_string}")
+    res = Net::HTTP.get_response(uri)
 
-    self.content_type = "application/xml"
-    self.response_body = %x{curl -G -d "#{csw_params}" "#{csw_service_url}"}
+    body = res.body
+    .gsub('http://localhost:8080/srv/en/csw', request.base_url + request.path)
+    .gsub('http://localhost:8080', request.base_url)
+
+    render :content_type => res["content-type"], :text => body
   end
 
   def is_valid_email? value
@@ -35,7 +40,7 @@ class ApplicationController < ActionController::Base
     r = false
     end
   end
-  
+
   def logined_email
     session[:login_email]
   end

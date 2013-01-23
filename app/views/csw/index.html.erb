@@ -60,16 +60,21 @@
 			// 404 will not trigger the callback
 			$.get('/xml/csw/test/' + v + '.xml?_=' + Math.random(), function(data, status, response) {
 				$('textarea.request').val(response.responseText);
+				$('textarea.response').val('')
 			})
 		})
 
 		$('button').click(function() {
-			var data = $('textarea.request').val()
+			var data = $('textarea.request').val();
+			var u = $('input[name=username]').val();
+			var p = $('input[name=password]').val();
 			$.ajax({
 				type : 'POST',
-				url : '/csw',
+				url : '/csw' + (u && p ? '?username=' + u + '&password=' + p : ''),
 				data : data.replace(/\n/, ''),
 				success : function(responseXML, status, response) {
+					$('input[name=username]').val('');
+					$('input[name=password]').val('');
 					$('textarea.response').val(response.responseText)
 				},
 				contentType : 'text/xml'
@@ -79,7 +84,7 @@
 </script>
 <br />
 <textarea class="request" rows="10" style="width:100%"><%= @xml%></textarea>
-<table>
+<table style="width: 100%">
 	<tr>
 		<td>
 		<select>
@@ -94,6 +99,10 @@
 				document.write(location.origin + '/csw')
 			</script>
 		</div></td>
+		<td style="text-align: right">
+		<input class="input-mini span2" type="text" name="username" placeholder="username" />
+		<input class="input-mini span2" type="password" name="password" placeholder="password" />
+		</td>
 	</tr>
 </table>
 <textarea class="response" rows="20" style="width:100%"></textarea>
