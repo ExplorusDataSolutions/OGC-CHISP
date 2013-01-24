@@ -52,9 +52,7 @@ jQuery(function($) {
 						app.alert(json.error, 'error');
 					} else {
 						app.alert(json.success, 'success');
-						$('.btn-login').parent().hide();
-						$('.btn-logout').parent().find('label').html(json.email)
-						$('.btn-logout').parent().show();
+						app.loginEmail(json.email);
 					}
 				}
 			});
@@ -76,6 +74,11 @@ jQuery(function($) {
 					}
 				}
 			});
+		},
+		loginEmail : function(email) {
+			$('.btn-login').parent().hide();
+			$('.btn-logout').parent().find('label').html(email)
+			$('.btn-logout').parent().show();
 		},
 		alert : function(title, content, type) {
 			if (!type) {

@@ -68,9 +68,9 @@
 				if (marker) {
 					marker.cancelSubscribe(function(json) {
 						if (json.error) {
-							app.alertError('Cancel subscribe failure', json.error);
+							$.app.alert('Cancel subscribe failure', json.error, 'error');
 						} else {
-							app.alertSuccess('Cancel subscribe success');
+							$.app.alert('Cancel subscribe success', 'success');
 						}
 					});
 				}
@@ -80,10 +80,18 @@
 			doSubscribe : function(target) {
 				var email = this.email;
 				if (email == '') {
-					app.alertError('Please login first');
-					return;
+					email = prompt("Please input your email:")
+					if (email) {
+						this.email = email;
+						$.app.loginEmail(email);
+						// login the email in the meantime
+						$.get('/login.json', {
+							email : email,
+						});
+					} else {
+						return;
+					}
 				}
-
 				var $tr = $(target).closest('tr');
 				var $tb = $tr.closest('table');
 				var id = $tr.attr('id').replace(/marker_/, '');
@@ -98,11 +106,11 @@
 
 				marker.subscribe(data, function(json) {
 					if (json.error) {
-						app.alertError('Subscribe failure', json.error);
+						$.app.alert('Subscribe failure', json.error, 'error');
 						$tr.find('.label').html('invalid')//
 						.removeClass('label-warning').addClass('label-important');
 					} else {
-						app.alertSuccess('Subscribe success');
+						$.app.alert('Subscribe success', 'success');
 						$tr.find('.label').html(json.status)//
 						.removeClass('label-warning').addClass('label-warning');
 					}
@@ -202,14 +210,6 @@
 				}
 				var h = $('#list-container').is(':visible') ? $('#list-container').height() : 0;
 				$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
-			},
-			alertSuccess : function(title, content) {
-				var html = '<h4>' + title + '</h4>' + (content || '');
-				$('.alert-success').html(html).show().fadeOut(3000);
-			},
-			alertError : function(title, content) {
-				var html = '<h4>' + title + '</h4>' + (content || '');
-				$('.alert-error').html(html).show().fadeOut(3000);
 			},
 		});
 
