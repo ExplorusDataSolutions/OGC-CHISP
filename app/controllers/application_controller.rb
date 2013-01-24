@@ -1,5 +1,7 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery
+
+  helper_method :logined_email
   #
   def csw_home_url
     @csw_home_url ||= Rails.application.config.csw_home_url
@@ -41,7 +43,8 @@ class ApplicationController < ActionController::Base
     end
   end
 
-  def logined_email
+  def logined_email *args
+    session[:login_email] = args[0] if args.length > 0
     session[:login_email]
   end
 end

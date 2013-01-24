@@ -23,20 +23,18 @@
 							<li<%=raw ' class="active"' if params[:controller] == "csw"%>>
 								<a href="/svc/csw">Catalog</a>
 							</li>
-							<% if session[:login_email] %>
-							<li<%=raw ' class="active dropdown"' if params[:controller] == "login"%>>
-								<a class="dropdown-toggle" href="/login"><%= session[:login_email]%> <b class="caret"></b></a>
-								<ul class="dropdown-menu">
-							    	<li>
-										<a href="/logout">Logout</a>
-									</li>
-							    </ul>
+							<li<%=raw logined_email.nil? ? ' class="hide"' : '' %>>
+								<label class="label"><%= logined_email%></label>
+								<button type="submit" class="btn btn-logout">
+									Logout
+								</button>
 							</li>
-							<% else %>
-							<li<%=raw ' class="active"' if params[:controller] == "login"%>>
-								<a href="/login">Login</a>
+							<li<%=raw logined_email.nil? ? '' : ' class="hide"' %>>
+								<input class="input-mini span3" type="email" name="email" value="<%= logined_email%>" maxlength="255" placeholder="your@email.com" />
+								<button type="submit" class="btn btn-login">
+									Login
+								</button>
 							</li>
-							<% end %>
 						</ul>
 					</div><!--/.nav-collapse -->
 				</div>
