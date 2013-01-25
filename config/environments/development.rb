@@ -37,4 +37,5 @@ OGCChisp::Application.configure do
   
   config.csw_home_url = 'http://localhost:8081'
   config.csw_service_url = 'http://localhost:8081/geonetwork/srv/en/csw'
+  config.csw_login_url = 'http://localhost:8081/srv/en/xml.user.login'
 end

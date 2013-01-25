@@ -66,19 +66,41 @@
 
 		$('button').click(function() {
 			var data = $('textarea.request').val();
-			var u = $('input[name=username]').val();
-			var p = $('input[name=password]').val();
-			$.ajax({
-				type : 'POST',
-				url : '/csw' + (u && p ? '?username=' + u + '&password=' + p : ''),
-				data : data.replace(/\n/, ''),
-				success : function(responseXML, status, response) {
-					$('input[name=username]').val('');
-					$('input[name=password]').val('');
-					$('textarea.response').val(response.responseText)
-				},
-				contentType : 'text/xml'
-			})
+
+			var u = $('input[name=username]');
+			var p = $('input[name=password]');
+
+			if (u.val() && p.val()) {
+				$.ajax({
+					type : 'POST',
+					url : '/csw/xml.user.login',
+					data : {
+						username : u.val(),
+						password : p.val(),
+					},
+					success : function(responseXML, status, response) {
+						u.val('');
+						p.val('');
+						$('textarea.response').val(response.responseText);
+
+						postXML();
+					},
+				})
+			} else {
+				postXML();
+			}
+			function postXML() {
+				$.ajax({
+					type : 'POST',
+					url : '/csw',
+					data : data.replace(/\n/, ''),
+					success : function(responseXML, status, response) {
+						$('textarea.response').val(response.responseText)
+					},
+					contentType : 'text/xml'
+				});
+			}
+
 		})
 	})
 </script>

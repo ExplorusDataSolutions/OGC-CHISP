@@ -67,4 +67,5 @@ OGCChisp::Application.configure do
   
   config.csw_home_url = 'http://chisp.elasticbeanstalk.com'
   config.csw_service_url = 'http://chisp.elasticbeanstalk.com/srv/en/csw'
+  config.csw_login_url = 'http://chisp.elasticbeanstalk.com/srv/en/xml.user.login'
 end
