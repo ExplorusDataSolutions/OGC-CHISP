@@ -87,12 +87,12 @@
 						username : u.val(),
 						password : p.val(),
 					},
-					success : function(responseXML, status, response) {
-						u.val('');
-						p.val('');
+					success : function(xml, status, response) {
 						$('textarea.response').val(response.responseText);
-
 						postXML();
+					},
+					error : function(xhr, status, e) {
+						$.app.alert(status + ' : ' + e, 'error');
 					},
 				})
 			} else {

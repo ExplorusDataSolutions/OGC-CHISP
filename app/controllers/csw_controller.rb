@@ -3,6 +3,15 @@ class CswController < ApplicationController
   end
 
   def login
+    if params[:username] == session[:username] and params[:password] == session[:password]
+      if request.cookies["JSESSIONID"].to_s != ''
+        return render :xml => <<-XML
+<?xml version="1.0" encoding="UTF-8"?>
+<ok>Already login</ok>
+XML
+      end
+    end
+
     if params[:username] and params[:password]
       require 'net/http'
 
@@ -20,6 +29,8 @@ XML
       if res.body == "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<ok />\r\n\r\n"
         cookie = res['Set-Cookie'];
         cookies["JSESSIONID"] = CGI::Cookie::parse(cookie)["JSESSIONID"]
+        session[:username] = params[:username]
+        session[:password] = params[:password]
       end
 
       render :content_type => res["content-type"], :text => res.body
