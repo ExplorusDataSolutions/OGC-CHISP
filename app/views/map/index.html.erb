@@ -56,17 +56,18 @@
 	</div>
 </div>
 <script>
-	var email = "" + "<%= @logined_email %>"</script>
-<script>
 	jQuery('#map').parent().css('padding', '0px');
 
 	jQuery(function($) {
 		var appView = Backbone.View.extend({
-			email : email,
 			el : $("body"),
 			events : {
 				"click #list-container" : "tableClickDelegate",
 				"click .btn-primary" : "doSubscribe",
+			},
+			loginedEmail : function() {
+				var input = $('.navbar input[name=email]');
+				return input.is(':hidden') && input.val();
 			},
 			recognizeMapClickAndDblclick : function(latlng, interval, staticObj) {
 				// This timeout value should not be quicker than system double click speed
@@ -96,7 +97,7 @@
 					this.cancelSubscribe(e.target);
 				}
 				if ($(e.target).hasClass('btn-success')) {
-					if (!this.email) {
+					if (!this.loginedEmail()) {
 						$('#inputEmail').closest('.control-group').show();
 					} else {
 						$('#inputEmail').closest('.control-group').hide();
@@ -139,11 +140,10 @@
 				this.adjustMapHeight();
 			},
 			doSubscribe : function() {
-				var email = this.email;
+				var email = this.loginedEmail();
 				if (email == '') {
 					email = $('#inputEmail').val();
 					if (email) {
-						this.email = email;
 						$.app.loginEmail(email);
 						// login the email in the meantime
 						$.get('/login.json', {
