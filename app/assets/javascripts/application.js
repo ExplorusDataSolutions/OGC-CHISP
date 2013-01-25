@@ -68,6 +68,7 @@ jQuery(function($) {
 					if (!json.error) {
 						app.alert('Email "' + json.logined_email + '" logout success', 'success')
 						$('.btn-login').parent().show();
+						$('.btn-login').parent().find('input').val('')
 						$('.btn-logout').parent().hide();
 					} else {
 						app.alert(json.error, 'error')
