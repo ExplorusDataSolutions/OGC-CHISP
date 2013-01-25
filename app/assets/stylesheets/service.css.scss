@@ -68,14 +68,26 @@
 }
 
 .navbar input, .navbar button.btn, .navbar label.label {
+  margin-left: 0px;
   margin-top: 10px;
   margin-bottom: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
+  padding: 0 6px;
+}
+
+.navbar input, .navbar label.label {
+  width: 150px;
+  font-size: 14px;
+  font-weight: normal;
+  border: 1px solid black;
+}
+
+.navbar button.btn {
+  width: 80px;
 }
 
 .navbar label.label {
   height: 20px;
   line-height: 20px;
   vertical-align: middle;
+  background: none;
 }
