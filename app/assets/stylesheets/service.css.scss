@@ -59,11 +59,11 @@
   padding-bottom: 0px;
 }
 
-.alert-success, .alert-error {
+.alert-success, .alert-error, .alert-warning {
    position: absolute;
    width: 40%;
    left: 50%;
-   top: 30%;
+   top: 41px;
    margin-left: -20%;
 }
 
