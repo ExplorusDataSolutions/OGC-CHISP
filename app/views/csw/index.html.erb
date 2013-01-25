@@ -115,25 +115,25 @@
 </script>
 <br />
 <textarea class="request" rows="10" style="width:100%"><%= @xml%></textarea>
-<table>
-	<tr>
-		<td>
-		<select class="span5">
+<div class="row-fluid">
+	<div class="span4">
+		<select class="span12">
 			<option> - Select a request - </option>
-		</select></td>
-		<td>
-		<input class="input-mini" type="text" name="username" placeholder="username" disabled="disabled" style="width: 80px" />
-		<input class="input-mini" type="password" name="password" placeholder="password" disabled="disabled" style="width: 80px" />
-		</td><td>
+		</select>
+	</div>
+	<div class="span1">
+		<input class="input-mini span12" type="text" name="username" placeholder="username" disabled="disabled" />
+	</div>
+	<div class="span1">
+		<input class="input-mini span12" type="password" name="password" placeholder="password" disabled="disabled" />
+	</div>
+	<div class="span6">
 		<button class="btn" style="margin: 0 0 10px">
 			Send Data Call
-		</button></td>
-		<td>
-		<div style="margin: 0 0 10px; vertical-align: middle">
-			<script>
-				document.write(location.origin + '/csw')
-			</script>
-		</div></td>
-	</tr>
-</table>
+		</button>
+		<script>
+			document.write(location.origin + '/csw')
+		</script>
+	</div>
+</div>
 <textarea class="response" rows="20" style="width:100%"></textarea>
