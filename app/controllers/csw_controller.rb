@@ -31,6 +31,8 @@ XML
         cookies["JSESSIONID"] = CGI::Cookie::parse(cookie)["JSESSIONID"]
         session[:username] = params[:username]
         session[:password] = params[:password]
+      else
+        cookies["JSESSIONID"] = nil
       end
 
       render :content_type => res["content-type"], :text => res.body
