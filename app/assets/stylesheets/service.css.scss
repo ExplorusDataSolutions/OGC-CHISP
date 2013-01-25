@@ -91,3 +91,16 @@
   vertical-align: middle;
   background: none;
 }
+
+.form-horizontal .control-label {
+  float: left;
+  width: 200px;
+}
+
+.form-horizontal .controls {
+  margin-left: 220px;
+}
+
+.form-horizontal .controls input {
+  width: 280px;
+}

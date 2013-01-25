@@ -16,7 +16,7 @@ class MapController < ApplicationController
     end
     @sb.save
 
-    render :json => { :poi_id => @sb.id, :status => @sb.status, :code => "success"}
+    render :json => @sb.to_json
   end
 
   def subscription

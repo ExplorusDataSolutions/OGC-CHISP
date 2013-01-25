@@ -9,6 +9,52 @@
 		<tbody></tbody>
 	</table>
 </div>
+<div class="modal hide fade">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+			&times;
+		</button>
+		<h3></h3>
+	</div>
+	<div class="modal-body">
+		<form class="form-horizontal">
+			<div class="control-group">
+				<label class="control-label" for="lat">Point #</label>
+				<div class="controls">
+					<input type="text" id="point" disabled="disabled">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="inputEmail">Email</label>
+				<div class="controls">
+					<input type="email" id="inputEmail" placeholder="your@email.com">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="sw_level_threshold">Surface Water Level Threshold</label>
+				<div class="controls">
+					<input type="text" id="sw_level_threshold" placeholder="">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="sw_flow_threshold">Surface Flow Level Threshold</label>
+				<div class="controls">
+					<input type="text" id="sw_flow_threshold" placeholder="">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="frequency">Frequency</label>
+				<div class="controls">
+					<input type="text" id="frequency" placeholder="">
+				</div>
+			</div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn btn-close" data-dismiss="modal" aria-hidden="true">Close</a>
+		<a href="javascript:void(0)" class="btn btn-primary">Subscribe</a>
+	</div>
+</div>
 <script>
 	var email = "" + "<%= @logined_email %>"</script>
 <script>
@@ -20,6 +66,7 @@
 			el : $("body"),
 			events : {
 				"click #list-container" : "tableClickDelegate",
+				"click .btn-primary" : "doSubscribe",
 			},
 			recognizeMapClickAndDblclick : function(latlng, interval, staticObj) {
 				// This timeout value should not be quicker than system double click speed
@@ -49,7 +96,21 @@
 					this.cancelSubscribe(e.target);
 				}
 				if ($(e.target).hasClass('btn-success')) {
-					this.doSubscribe(e.target);
+					if (!this.email) {
+						$('#inputEmail').closest('.control-group').show();
+					} else {
+						$('#inputEmail').closest('.control-group').hide();
+					}
+					var $tr = $(e.target).closest('tr');
+					var $tb = $tr.closest('table');
+					var id = $tr.attr('id').replace(/marker_/, '');
+					$('#point').val(id);
+					$('#sw_level_threshold').val($tr.find('.sw_level').html());
+					$('#sw_flow_threshold').val($tr.find('.sw_flow').html());
+					$('#frequency').val($tr.find('.frequency').html());
+					$('.modal h3').html($tb.attr('id') == 'list-point' ? 'Point Of Interest' : 'Station Of Interest');
+
+					$('.modal').modal('show');
 				}
 			},
 			showMarkerPopup : function(target) {
@@ -77,10 +138,10 @@
 				map.closePopup(id);
 				this.adjustMapHeight();
 			},
-			doSubscribe : function(target) {
+			doSubscribe : function() {
 				var email = this.email;
 				if (email == '') {
-					email = prompt("Please input your email:")
+					email = $('#inputEmail').val();
 					if (email) {
 						this.email = email;
 						$.app.loginEmail(email);
@@ -89,30 +150,34 @@
 							email : email,
 						});
 					} else {
-						return;
+						return $.app.alert('Please leave your email', 'warning');
 					}
 				}
-				var $tr = $(target).closest('tr');
-				var $tb = $tr.closest('table');
-				var id = $tr.attr('id').replace(/marker_/, '');
-				var marker = map.getLayerById(id);
 				var data = {
 					email : email,
-					poi_type : $tb.attr('id') == 'list-point' ? 'P' : $tb.attr('id') == 'list-station' ? 'S' : '',
+					poi_type : $('.modal h3').html() == 'Point Of Interest' ? 'P' : 'S',
+					sw_level_threshold : $('#sw_level_threshold').val(),
+					sw_flow_threshold : $('#sw_flow_threshold').val(),
+					frequency : $('#frequency').val(),
 				};
-				$tr.find('input').each(function(index, input) {
-					data[input.name] = $(input).val();
-				});
 
+				var marker_id = $('#point').val();
+				var marker = map.getLayerById(marker_id);
+				var $tr = $('#marker_' + marker_id);
 				marker.subscribe(data, function(json) {
 					if (json.error) {
 						$.app.alert('Subscribe failure', json.error, 'error');
 						$tr.find('.label').html('invalid')//
 						.removeClass('label-warning').addClass('label-important');
 					} else {
-						$.app.alert('Subscribe success', 'success');
+						$tr.find('.sw_level').html(json.sw_level_threshold);
+						$tr.find('.sw_flow').html(json.sw_flow_threshold);
+						$tr.find('.frequency').html(json.frequency);
 						$tr.find('.label').html(json.status)//
 						.removeClass('label-warning').addClass('label-warning');
+
+						$('.modal').modal('hide');
+						$.app.alert('Subscribe success', 'success');
 					}
 				});
 			},
@@ -144,7 +209,7 @@
 					'<tr id="marker_' + id + '" class="row">', //
 					'<td>' + id + '</td>', //
 					'<td>' + (data.id || "") + '</td>', //
-					'<td>' + latlng.lng.toFixed(7) + ' / ' + latlng.lat.toFixed(7) + '</td>', //
+					'<td>' + latlng.lng.toFixed(8) + ' / ' + latlng.lat.toFixed(8) + '</td>', //
 					'<td>' + (data.name || '') + '</td>', //
 					'<td>' + (data.organisationName || '') + '</td>', //
 					'<td>' + (data.Watershed || '') + '</td>', //
@@ -174,13 +239,10 @@
 					$('#list-point').show().find('tbody').prepend([//
 					'<tr id="marker_' + id + '" class="row">', //
 					'<td>' + id + '</td>', //
-					'<td>' + latlng.lng.toFixed(7) + ' / ' + latlng.lat.toFixed(7) + '</td>', //
-					'<td><input class="input-mini" type="text" name="sw_level_threshold" value="'//
-					+ (data.sw_level_threshold || '') + '" /></td>', //
-					'<td><input class="input-mini" type="text" name="sw_flow_threshold" value="'//
-					+ (data.sw_flow_threshold || '') + '" /></td>', //
-					'<td><input class="input-mini" type="text" name="frequency" value="'//
-					+ (data.frequency || '') + '" /></td>', //
+					'<td>' + latlng.lng.toFixed(8) + ' / ' + latlng.lat.toFixed(8) + '</td>', //
+					'<td class="sw_level">' + (data.sw_level_threshold || '') + '</td>', //
+					'<td class="sw_flow">' + (data.sw_flow_threshold || '') + '</td>', //
+					'<td class="frequency">' + (data.frequency || '') + '</td>', //
 					'<td>Point of interest</td>', //
 					(data.status == 'activated'//
 					? '<td><span class="label label-success">activated</span></td>'//
