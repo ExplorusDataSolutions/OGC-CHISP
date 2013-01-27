@@ -60,7 +60,7 @@ var MarkerGroup = L.LayerGroup.extend({
 				success : function(json) {
 					var marker, point, data, options = me.options;
 
-					for (var i = 0, row; row = json[i]; i++) {
+					for (var i = 0, row; row = json.subscriptions[i]; i++) {
 						if (!row.lat) {
 							continue;
 						}
@@ -80,8 +80,8 @@ var MarkerGroup = L.LayerGroup.extend({
 
 					me.fire('load');
 				},
-				error : function(xhr, statusText) {
-					alert(statusText)
+				error : function(xhr, status, e) {
+					$.app.alert(status + ' : ' + e, 'error');
 				}
 			});
 		}
@@ -104,10 +104,6 @@ var MarkerGroup = L.LayerGroup.extend({
 		if (e.target.tagName == 'svg') {
 			// click on map, to bubble
 		} else {
-			var marker = this._map.getLayerById(e.target.id);
-			this._map.fire('clickMarker', {
-				marker : marker
-			});
 			L.DomEvent.stopPropagation(e);
 		}
 	},

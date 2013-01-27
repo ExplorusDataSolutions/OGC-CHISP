@@ -91,7 +91,7 @@ jQuery(function($) {
 			if ($('.' + cls).length == 0) {
 				$('<div class="alert ' + cls + ' hide"></div>').appendTo($('body'));
 			}
-			$('.' + cls).html(html).show().fadeOut(3000, "linear");
+			$('.' + cls).html(html).show().fadeOut(5000, "linear");
 		},
 	});
 	$.app = new appView;

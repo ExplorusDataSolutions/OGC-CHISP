@@ -86,9 +86,7 @@ CircleMarker = L.CircleMarker.extend({
 			},
 			dataType : 'json',
 			success : function(json) {
-				if (json.poi_id) {
-					me.data = json;
-				}
+				json.data.poi_id && (me.data = json.data);
 				typeof callback == 'function' && callback(me.data);
 			},
 			error : function(xhr, textStatus, e) {
@@ -98,31 +96,29 @@ CircleMarker = L.CircleMarker.extend({
 			},
 		});
 	},
-	cancelSubscribe : function(callback) {
-		if (!this.data.poi_id || this.data.poi_id == 0) {
+	cancelSubscribe : function(email, callback) {
+		var data = this.data;
+		if (!data.poi_id || data.poi_id == 0) {
 			this.setStatus('origin');
 			typeof callback == 'function' && callback({});
 			return;
 		}
-		var url = location.origin + "/GIS-SFU-cancel-subscribe"
-		var data = {
-			id : this.data.poi_id || 0
-		}
 
+		var url = location.origin + "/GIS-SFU-cancel-subscribe"
 		var me = this;
+
 		$.ajax({
 			url : '/proxy',
 			data : {
 				url : url,
-				data : data,
+				data : {
+					id : data.poi_id,
+					email : email,
+				},
 			},
 			dataType : 'json',
 			success : function(json) {
-				if (me.isFromWFS()) {
-					me.setStatus('origin');
-				} else if (json.status == 'invalid') {
-					me.setStatus('origin');
-				} else {
+				if (json.success) {
 					me._map.removeLayer(me);
 				}
 

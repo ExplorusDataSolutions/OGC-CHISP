@@ -1,33 +1,29 @@
 class Subscription < ActiveRecord::Base
   attr_accessible :email, :frequency, :lat, :lng, :station_id, :sw_flow_threshold, :sw_level_threshold, :poi_type, :status
-  def to_json
+  def as_json(options = nil)
     if poi_type == 'P'
-      <<-JSON
-{
-    "email": "#{email}",
-    "poi_id": "#{id}",
-    "poi_type": "#{poi_type}",
-    "lat": #{lat},
-    "lng": #{lng},
-    "status": "#{status}",
-    "sw_flow_threshold": "#{sw_flow_threshold}",
-    "sw_level_threshold": "#{sw_level_threshold}",
-    "frequency": "#{frequency}"
-}
-    JSON
+      {
+        "email" => email,
+        "poi_id" => id,
+        "poi_type" => poi_type,
+        "lat" => lat,
+        "lng" => lng,
+        "status" => status,
+        "sw_flow_threshold" => sw_flow_threshold,
+        "sw_level_threshold" => sw_level_threshold,
+        "frequency" => frequency
+      }
     elsif poi_type == 'S'
-      <<-JSON
-{
-    "email": "#{email}",
-    "poi_id": "#{id}",
-    "poi_type": "#{poi_type}",
-    "station_id": "#{station_id}",
-    "status": "#{status}",
-    "sw_flow_threshold": "#{sw_flow_threshold}",
-    "sw_level_threshold": "#{sw_level_threshold}",
-    "frequency": "#{frequency}"
-}
-    JSON
+      {
+        "email" => email,
+        "poi_id" => id,
+        "poi_type" => poi_type,
+        "station_id" => station_id,
+        "status" => status,
+        "sw_flow_threshold" => sw_flow_threshold,
+        "sw_level_threshold" => sw_level_threshold,
+        "frequency" => frequency
+      }
     end
   end
 

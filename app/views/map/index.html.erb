@@ -84,7 +84,7 @@
 						staticObj.timer = null;
 						app.showMarkerInfoRow(new CircleMarker(latlng, {
 							type : 'Point of Interest',
-							status : 'pending',
+							status : 'selected',
 						}, staticObj.layer.options.style).addTo(staticObj.layer));
 					}, timeout);
 				}
@@ -104,11 +104,11 @@
 					}
 					var $tr = $(e.target).closest('tr');
 					var $tb = $tr.closest('table');
-					var id = $tr.attr('id').replace(/marker_/, '');
+					var id = this.getMarkerIdByRow($tr);
 					$('#point').val(id);
-					$('#sw_level_threshold').val($tr.find('.sw_level').html());
-					$('#sw_flow_threshold').val($tr.find('.sw_flow').html());
-					$('#frequency').val($tr.find('.frequency').html());
+					$('#sw_level_threshold').val($tr.find('.f-level').html());
+					$('#sw_flow_threshold').val($tr.find('.f-flow').html());
+					$('#frequency').val($tr.find('.f-frequency').html());
 					$('.modal h3').html($tb.attr('id') == 'list-point' ? 'Point Of Interest' : 'Station Of Interest');
 
 					$('.modal').modal('show');
@@ -116,28 +116,29 @@
 			},
 			showMarkerPopup : function(target) {
 				var $tr = $(target).closest('tr');
-				var id = $tr.attr('id').replace(/marker_/, '');
+				var id = this.getMarkerIdByRow($tr);
 				map.openPopup(id);
 			},
 			cancelSubscribe : function(target) {
 				var $tr = $(target).closest('tr'), $tbody = $tr.parent();
-				var id = $tr.attr('id').replace(/marker_/, '');
-				$tr.remove();
-				if (!$tbody.children().length) {
-					$tbody.closest('table').hide();
-				}
+				var id = this.getMarkerIdByRow($tr);
 				var marker = map.getLayerById(id);
 				if (marker) {
-					marker.cancelSubscribe(function(json) {
+					var app = this;
+					marker.cancelSubscribe(this.loginedEmail(), function(json) {
 						if (json.error) {
 							$.app.alert('Cancel subscribe failure', json.error, 'error');
 						} else {
 							$.app.alert('Cancel subscribe success', 'success');
+							$tr.remove();
+							if (!$tbody.children().length) {
+								$tbody.closest('table').hide();
+							}
+							app.adjustMapHeight();
 						}
 					});
 				}
 				map.closePopup(id);
-				this.adjustMapHeight();
 			},
 			doSubscribe : function() {
 				var email = this.loginedEmail();
@@ -163,18 +164,14 @@
 
 				var marker_id = $('#point').val();
 				var marker = map.getLayerById(marker_id);
-				var $tr = $('#marker_' + marker_id);
+				var $tr = this.getRowByMarkerId(marker_id);
+
+				var app = this;
 				marker.subscribe(data, function(json) {
 					if (json.error) {
 						$.app.alert('Subscribe failure', json.error, 'error');
-						$tr.find('.label').html('invalid')//
-						.removeClass('label-warning').addClass('label-important');
 					} else {
-						$tr.find('.sw_level').html(json.sw_level_threshold);
-						$tr.find('.sw_flow').html(json.sw_flow_threshold);
-						$tr.find('.frequency').html(json.frequency);
-						$tr.find('.label').html(json.status)//
-						.removeClass('label-warning').addClass('label-warning');
+						app.showMarkerInfoRow(marker);
 
 						$('.modal').modal('hide');
 						$.app.alert('Subscribe success', 'success');
@@ -183,84 +180,73 @@
 			},
 			showMarkerInfoRow : function(marker) {
 				var id = L.Util.stamp(marker);
-				if ($('#marker_' + id).length) {
-					return;
-				}
 				var latlng = marker.getLatLng(), data = marker.data;
 
 				if (data.id) {
 					if ($('#list-station').find('thead tr').length == 0) {
-						$('#list-station').find('thead').append([//
-						"<tr>", //
-						"<th></th>", //
-						"<th>#</th>", //
-						"<th>gml:id</th>", //
-						"<th>Location</th>", //
-						"<th>Name</th>", //
-						"<th>Organisation Name</th>", //
-						"<th>Watershed</th>", //
-						"<th>Description</th>", //
-						"<th>Status</th>", //
-						"<th>Actions</th>", //
-						"</tr>"//
-						].join(''));
+						$('#list-station').find('thead').append(["<tr>", //
+						"<th></th><th>#</th><th>gml:id</th><th>Location</th>", //
+						"<th>Name</th><th>Organisation Name</th><th>Watershed</th>", //
+						"<th>Description</th><th>Status</th><th>Actions</th>", //
+						"</tr>"].join(''));
 					}
 					$('#list-station').show().find('tbody').prepend([//
 					'<tr id="marker_' + id + '" class="row">', //
-					'<td>' + id + '</td>', //
+					'<td class="f-id"></td>', //
 					'<td>' + (data.id || "") + '</td>', //
 					'<td>' + latlng.lng.toFixed(8) + ' / ' + latlng.lat.toFixed(8) + '</td>', //
 					'<td>' + (data.name || '') + '</td>', //
 					'<td>' + (data.organisationName || '') + '</td>', //
 					'<td>' + (data.Watershed || '') + '</td>', //
 					'<td>' + (data.type || '') + '</td>', //
-					'<td><span class="label label-warning">' + marker.data.status + '</span></td>', //
-					'<td>', //
+					'<td>Point of station</td><td class="f-status"><span class="label"></span></td>', //
+					'<td class="f-action">', //
 					' <button class="btn btn-mini btn-danger">Cancel</button>', //
 					' <button class="btn btn-mini btn-success">Subscribe</button>', //
 					'</td>', //
 					'</tr>'].join(''));
 				} else {
 					if ($('#list-point').find('thead tr').length == 0) {
-						$('#list-point').find('thead').append([//
-						"<tr>", //
-						"<th></th>", //
-						"<th>#</th>", //
-						"<th>Location</th>", //
-						"<th>sw_level_threshold</th>", //
-						"<th>sw_flow_threshold</th>", //
-						"<th>freqency</th>", //
-						"<th>Description</th>", //
-						"<th>Status</th>", //
-						'<th></th>', //
-						"</tr>"//
-						].join(''));
+						$('#list-point').find('thead').append(["<tr>", //
+						"<th></th><th>#</th><th>Location</th>", //
+						"<th>sw_level_threshold</th><th>sw_flow_threshold</th><th>freqency</th>", //
+						"<th>Description</th><th>Status</th><th></th>", //
+						"</tr>"].join(''));
 					}
-					$('#list-point').show().find('tbody').prepend([//
-					'<tr id="marker_' + id + '" class="row">', //
-					'<td>' + id + '</td>', //
-					'<td>' + latlng.lng.toFixed(8) + ' / ' + latlng.lat.toFixed(8) + '</td>', //
-					'<td class="sw_level">' + (data.sw_level_threshold || '') + '</td>', //
-					'<td class="sw_flow">' + (data.sw_flow_threshold || '') + '</td>', //
-					'<td class="frequency">' + (data.frequency || '') + '</td>', //
-					'<td>Point of interest</td>', //
-					(data.status == 'activated'//
-					? '<td><span class="label label-success">activated</span></td>'//
-					: data.status == 'pending'//
-					? '<td><span class="label label-warning">pending</span></td>'//
-					: data.status == 'pending'//
-					? '<td><span class="label label-error">invalid</span></td>'//
-					: '<td><span class="label">' + (data.status || '') + '</span></td>'), //
-					'<td>', //
-					' <button class="btn btn-mini btn-danger">Cancel</button>', //
-					' <button class="btn btn-mini btn-success">Subscribe</button>', //
-					'</td>', //
-					'</tr>'].join(''));
+					if (this.getRowByMarkerId(id).length == 0) {
+						$('#list-point').show().find('tbody').prepend([//
+						'<tr id="marker_' + id + '" class="row">', //
+						'<td class="f-id"></td><td class="f-latlng"></td>', //
+						'<td class="f-level"></td><td class="f-flow"></td><td class="f-frequency"></td>', //
+						'<td>Point of interest</td><td class="f-status"><span class="label"></span></td>', //
+						'<td class="f-action">', //
+						' <button class="btn btn-mini btn-danger">Cancel</button>', //
+						' <button class="btn btn-mini btn-success">Subscribe</button>', //
+						'</td>', //
+						'</tr>'].join(''));
+					}
 				}
+
+				$tr = this.getRowByMarkerId(id);
+				$tr.find('.f-id').html(id);
+				$tr.find('.f-latlng').html(latlng.lng.toFixed(8) + ' / ' + latlng.lat.toFixed(8));
+				$tr.find('.f-level').html(data.sw_level_threshold || '');
+				$tr.find('.f-flow').html(data.sw_flow_threshold || '');
+				$tr.find('.f-frequency').html(data.frequency || '');
+				$tr.find('.f-status .label').html(data.status)//
+				.removeClass().addClass(this.statusClass[data.status] || '');
+				$tr.find('.f-action .btn-danger')[{selected:1,invalid:1}[data.status] ? 'show' : 'hide']();
+				$tr.find('.f-action .btn-success')[data.status == 'invalid' ? 'hide' : 'show']();
 
 				$('#list-container').slideDown("fast", function() {
 					app.adjustMapHeight();
 				});
+			},
+			statusClass : {
+				selected : "label",
+				pending : "label label-warning",
+				active : "label label-success",
+				invalid : "label label-important",
 			},
 			adjustMapHeight : function() {
 				if ($('#list-station, #list-point').find('tbody tr').length >= 5) {
@@ -272,6 +258,12 @@
 				}
 				var h = $('#list-container').is(':visible') ? $('#list-container').height() : 0;
 				$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
+			},
+			getMarkerIdByRow : function(tr) {
+				return $(tr).attr('id').replace(/marker_/, '');
+			},
+			getRowByMarkerId : function(marker_id) {
+				return $('#marker_' + marker_id);
 			},
 		});
 
@@ -327,7 +319,7 @@
 				}
 			}(),
 			onMarkerAdded : function(marker) {
-				marker.data.status == 'pending' && app.showMarkerInfoRow(marker);
+				app.showMarkerInfoRow(marker);
 			},
 		}).addTo(map), "Point Of Interest");
 

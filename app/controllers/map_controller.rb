@@ -4,56 +4,60 @@ class MapController < ApplicationController
   end
 
   def subscribe
-    id = params["id"]
+    id, email = params.values_at(:id, :email)
     data = params.except(:controller, :action, :format, :id)
-    data["status"] = "pending"
+    result = { :data => data }
 
     begin
-      @sb = Subscription.find(id)
-      @sb.update_attributes(data)
-    rescue
-      @sb = Subscription.new(data)
-    end
-    @sb.save
+      sb = Subscription.find(id)
+      if sb.email != email
+        result[:error] = "No permission to operate POI_ID #{id}"
+      else
+        status = ["pending", "active", "invalid"]
+        data[:status] = status[[status.index(sb.status) + 1, status.length - 1].min]
+        sb.update_attributes(data)
 
-    render :json => @sb.to_json
+        result[:data] = sb
+        result[:success] = "POI_ID #{id} update success"
+      end
+    rescue
+      data[:status] = "pending"
+      sb = Subscription.new(data)
+      sb.save
+      result[:data] = sb
+      result[:success] = "POI_ID #{sb.id} create success"
+    end
+
+    render :json => result
   end
 
   def subscription
     if params[:email].nil?
-      @sbs = Subscription.all
+      sbs = Subscription.all
     else
-      @sbs = Subscription.where(:email => params[:email])
+      sbs = Subscription.where(:email => params[:email])
     end
 
-    respond_to do |format|
-      format.json { render :json => '[' + @sbs.map { |sb| sb.to_json }.join(',') + ']' }
-      format.xml  {
-        xml = '<Subscriptions xmlns:gml="http://www.opengis.net/gml/3.2">'
-        xml += @sbs.map { |sb| sb.to_xml }.join('')
-        xml += '</Subscriptions>'
-        render :xml => xml }
-    end
+   render :json => { :subscriptions => sbs }
   end
 
   def cancel_subscribe
-    id = params["id"]
+    id = params[:id]
+    email = params[:email]
+    result = { :data => { :id => id, :email => email } }
 
     begin
-      @sb = Subscription.find(id)
-      if @sb.status == 'pending'
-        @sb.status = 'invalid'
-        @sb.save
-        status = 'invalid'
-      elsif @sb.status == 'invalid'
-        @sb.destroy
-        status = ''
+      sb = Subscription.find(id)
+      if sb.email != email
+        result[:error] = "No permission to operate POI_ID #{id}"
+      elsif sb.status == 'invalid'
+        sb.destroy
+        result[:success] = "POI_ID #{id} delete success"
       else
-        status = ''
+        result[:error] = "Only invalid POI can be cancelled"
       end
-      result = { :id => id, :status => status, :msg => "success" }
     rescue
-      result = { :error => "Poi_id #{id} not exists" }
+      result[:error] = "POI_ID #{id} not exists"
     end
 
     render :json => result
