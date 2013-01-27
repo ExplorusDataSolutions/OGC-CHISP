@@ -87,11 +87,11 @@ CircleMarker = L.CircleMarker.extend({
 			dataType : 'json',
 			success : function(json) {
 				json.data.poi_id && (me.data = json.data);
-				typeof callback == 'function' && callback(me.data);
+				typeof callback == 'function' && callback(json);
 			},
-			error : function(xhr, textStatus, e) {
+			error : function(xhr, status, e) {
 				typeof callback == 'function' && callback({
-					error : textStatus || e
+					error : status + ' : ' + e
 				});
 			},
 		});

@@ -168,12 +168,11 @@
 
 				var app = this;
 				marker.subscribe(data, function(json) {
+					$('.modal').modal('hide');
 					if (json.error) {
 						$.app.alert('Subscribe failure', json.error, 'error');
 					} else {
 						app.showMarkerInfoRow(marker);
-
-						$('.modal').modal('hide');
 						$.app.alert('Subscribe success', 'success');
 					}
 				});
