@@ -9,11 +9,14 @@ class LoginController < ApplicationController
     respond_to do |format|
       format.json {
         if @old_email
-          render :json => { :email => @old_email, :error => "Email \"#{@old_email}\" already login" }
+          render :status => 404, :json => ''
+        #render :json => { :email => @old_email, :error => "Email \"#{@old_email}\" already login" }
         elsif @is_valid_email
-          render :json => { :email => @new_email, :success => "Email \"#{@new_email}\" login success" }
+          render :json => ''
+        #render :json => { :email => @new_email, :success => "Email \"#{@new_email}\" login success" }
         else
-          render :json => { :email => @new_email, :error => "Invalid email \"#{@new_email}\"" }
+          render :status => 404, :json => ''
+        #render :json => { :email => @new_email, :error => "Invalid email \"#{@new_email}\"" }
         end
       }
       format.html
@@ -25,7 +28,7 @@ class LoginController < ApplicationController
     logined_email nil
 
     respond_to do |format|
-      format.json { render :json => { :error => false, :logined_email => @email } }
+      format.json { render :json => '' }
       format.html { redirect_to :login }
     end
   end

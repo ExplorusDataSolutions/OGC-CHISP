@@ -43,18 +43,18 @@ jQuery(function($) {
 			app = this;
 			$.ajax({
 				url : '/login.json',
+				type : 'post',
 				data : {
 					email : email,
 				},
 				dataType : 'json',
 				success : function(json) {
-					if (json.error) {
-						app.alert(json.error, 'error');
-					} else {
-						app.alert(json.success, 'success');
-						app.loginEmail(json.email);
-					}
-				}
+					app.alert('Login success', 'success');
+					app.loginEmail(email);
+				},
+				error : function(xhr, status, e) {
+					app.alert('Login failed', 'error');
+				},
 			});
 		},
 		logout : function(e) {
@@ -65,19 +65,19 @@ jQuery(function($) {
 				dataType : 'json',
 				type : 'post',
 				success : function(json) {
-					if (!json.error) {
-						app.alert('Email "' + json.logined_email + '" logout success', 'success')
-						$('.btn-login').parent().show();
-						$('.btn-login').parent().find('input').val('')
-						$('.btn-logout').parent().hide();
-					} else {
-						app.alert(json.error, 'error')
-					}
-				}
+					app.alert('Logout success', 'success');
+					$('.btn-login').parent().find('input').val('')
+					$('.btn-login').parent().show();
+					$('.btn-logout').parent().hide();
+				},
+				error : function(xhr, status, e) {
+					app.alert('Logout failed', 'error');
+				},
 			});
 		},
 		loginEmail : function(email) {
 			$('.btn-login').parent().hide();
+			$('.btn-login').parent().find('input').val(email)
 			$('.btn-logout').parent().find('label').html(email)
 			$('.btn-logout').parent().show();
 		},
