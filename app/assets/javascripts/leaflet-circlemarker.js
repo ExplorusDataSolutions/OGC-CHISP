@@ -23,7 +23,7 @@ CircleMarker = L.CircleMarker.extend({
 	initialize : function(latlng, data, style) {
 		this.data = data || {};
 		this.originStyle = L.Util.extend({}, this.originStyle, style);
-		if (data.status == 'pending') {
+		if (this.isPending(data.status)) {
 			L.CircleMarker.prototype.initialize.call(this, latlng, this.pendingStyle);
 		} else {
 			L.CircleMarker.prototype.initialize.call(this, latlng, this.originStyle);
@@ -46,89 +46,23 @@ CircleMarker = L.CircleMarker.extend({
 		//Disable this to enable bubble
 		//L.DomEvent.stopPropagation(e);
 
-		this.setStatus('pending');
+		this.setPendingStatus();
 	},
 	isFromWFS : function() {
 		return this.data && this.data.id;
 	},
-	isPending : function() {
-		return this.data && this.data.status == 'pending';
+	isPending : function(status) {
+		return status == 'Pending' || this.data && this.data.status == 'Pending';
+	},
+	setPendingStatus : function() {
+		this.setStatus('Pending');
 	},
 	setStatus : function(status) {
-		if (status == 'pending') {
+		this.data.status = status;
+		if (this.isPending(status)) {
 			this.setStyle(this.pendingStyle);
 		} else if (status == 'origin') {
 			this.setStyle(this.originStyle);
 		}
 	},
-	subscribe : function(data, callback) {
-		var latlng = this.getLatLng();
-
-		/**
-		 * @see https://github.com/tesera/OGC-CHISP/wiki/GIS-FCU-Subscription-Broker-API
-		 */
-		// var url = "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=subscribe"
-		// A temporary substitution
-		var url = location.origin + "/GIS-SFU-subscribe"
-		data = data || {};
-		data.id = this.data.poi_id || 0;
-		data.status = this.data.status || 'pending';
-		data.lat = latlng.lat.toFixed(8);
-		data.lng = latlng.lng.toFixed(8);
-
-		var me = this;
-		$.ajax({
-			url : '/proxy',
-			data : {
-				url : url,
-				data : data,
-				format : 'json',
-			},
-			dataType : 'json',
-			success : function(json) {
-				json.data.poi_id && (me.data = json.data);
-				typeof callback == 'function' && callback(json);
-			},
-			error : function(xhr, status, e) {
-				typeof callback == 'function' && callback({
-					error : status + ' : ' + e
-				});
-			},
-		});
-	},
-	cancelSubscribe : function(email, callback) {
-		var data = this.data;
-		if (!data.poi_id || data.poi_id == 0) {
-			this.setStatus('origin');
-			typeof callback == 'function' && callback({});
-			return;
-		}
-
-		var url = location.origin + "/GIS-SFU-cancel-subscribe"
-		var me = this;
-
-		$.ajax({
-			url : '/proxy',
-			data : {
-				url : url,
-				data : {
-					id : data.poi_id,
-					email : email,
-				},
-			},
-			dataType : 'json',
-			success : function(json) {
-				if (json.success) {
-					me._map.removeLayer(me);
-				}
-
-				typeof callback == 'function' && callback(json);
-			},
-			error : function(xhr, textStatus, e) {
-				typeof callback == 'function' && callback({
-					error : textStatus || e
-				});
-			},
-		});
-	}
 });

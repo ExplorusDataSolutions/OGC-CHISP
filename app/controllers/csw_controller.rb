@@ -46,14 +46,18 @@ XML
 
   def proxy
     require 'net/http'
-    uri = URI.parse(params['url'])
+    url = URI.parse(params[:url])
 
-    if params["xml"]
-      response = Net::HTTP.post_form(uri, { "xml" => params["xml"] })
+    if params[:json]
+      uri = URI(url)
+      req = Net::HTTP::Post.new(uri.request_uri)
+      req.content_type = "application/json"
+      req.body = params[:json]
+      response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
     elsif params["data"]
-      response = Net::HTTP.post_form(uri, params["data"])
+      response = Net::HTTP.post_form(url, params["data"])
     else
-      response = Net::HTTP.get_response(uri)
+      response = Net::HTTP.get_response(url)
 
       if response.code == "200"
       response_body = response.body
@@ -66,12 +70,7 @@ XML
       end
     end
 
-    if response.nil?
-      #self.content_type = response["content-type"]
-      else
-      self.content_type = response["content-type"]
-    end
-
+    self.content_type = response["content-type"] unless response.nil?
     self.response_body = response.body
   end
 

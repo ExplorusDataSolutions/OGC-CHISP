@@ -38,19 +38,27 @@ var MarkerGroup = L.LayerGroup.extend({
 	initialize : function(options) {
 		L.LayerGroup.prototype.initialize.apply(this);
 
+		if (options.showMessage) {
+			this.showMessage = options.showMessage;
+			delete options.showMessage;
+		}
+
 		L.Util.setOptions(this, options);
 		this.on('loading', this._onStatusLoading, this);
 		this.on('load', this._onStatusLoad, this);
+	},
 
-		this.load();
+	showMessage : function(msg, status) {
+		alert(status + ' : ' + msg);
 	},
 
 	load : function() {
-		var me = this;
-		if (me.options.url) {
+		var me = this, options = me.options;
+		if (options.url && options.email) {
+			me.clearLayers();
 			me.fire('loading');
 
-			var url = this.options.url;
+			var url = options.url + '&email=' + options.email;
 			$.ajax({
 				url : '/proxy',
 				data : {
@@ -58,20 +66,19 @@ var MarkerGroup = L.LayerGroup.extend({
 				},
 				dataType : 'json',
 				success : function(json) {
-					var marker, point, data, options = me.options;
-
-					for (var i = 0, row; row = json.subscriptions[i]; i++) {
-						if (!row.lat) {
+					if (json.code == 'UserNotFound') {
+						me.showMessage(json.message, 'error');
+					}
+					var marker, point, data;
+					for (var i = 0, row; row = json[i]; i++) {
+						if (row.poiType == 'S') {
 							continue;
 						}
 						point = [row.lat, row.lng];
 						data = {
-							poi_id : row.poi_id,
+							poi_id : row.poiID,
 							type : row.poi_type,
 							status : row.status,
-							sw_flow_threshold : row.sw_flow_threshold,
-							sw_level_threshold : row.sw_level_threshold,
-							frequency : row.frequency,
 						}
 						marker = new CircleMarker(point, data, options.style);
 						me.addLayer(marker);
@@ -81,7 +88,7 @@ var MarkerGroup = L.LayerGroup.extend({
 					me.fire('load');
 				},
 				error : function(xhr, status, e) {
-					$.app.alert(status + ' : ' + e, 'error');
+					me.showMessage(status + ' : ' + e, 'error');
 				}
 			});
 		}
@@ -92,12 +99,15 @@ var MarkerGroup = L.LayerGroup.extend({
 		map._initPathRoot();
 
 		this.options.click && map.on('click', this.options.click, this);
+		this.options.onEmailLogin && this.options.onEmailLogin.call(this);
 
 		L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
 		L.DomEvent.on(map._pathRoot, 'mouseover', this._onMouseOver, this);
 		L.DomEvent.on(map._pathRoot, 'mouseout', this._onMouseOut, this);
 
 		L.LayerGroup.prototype.onAdd.apply(this, arguments);
+
+		this.load();
 	},
 
 	_onMouseClick : function(e) {
@@ -118,5 +128,15 @@ var MarkerGroup = L.LayerGroup.extend({
 		if (e.target.tagName == 'path') {
 			this._map.closePopup(e.target.id);
 		}
+	},
+
+	addLayer : function(layer) {
+		layer.groupLayer = this;
+		return L.LayerGroup.prototype.addLayer.apply(this, arguments);
+	},
+
+	removeLayer : function(layer) {
+		delete layer.groupLayer;
+		return L.LayerGroup.prototype.removeLayer.apply(this, arguments);
 	},
 });

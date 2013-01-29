@@ -19,12 +19,6 @@
 	<div class="modal-body">
 		<form class="form-horizontal">
 			<div class="control-group">
-				<label class="control-label" for="lat">Point #</label>
-				<div class="controls">
-					<input type="text" id="point" disabled="disabled">
-				</div>
-			</div>
-			<div class="control-group">
 				<label class="control-label" for="inputEmail">Email</label>
 				<div class="controls">
 					<input type="email" id="inputEmail" placeholder="your@email.com">
@@ -84,34 +78,39 @@
 						staticObj.timer = null;
 						app.showMarkerInfoRow(new CircleMarker(latlng, {
 							type : 'Point of Interest',
-							status : 'selected',
+							status : 'Selected',
 						}, staticObj.layer.options.style).addTo(staticObj.layer));
 					}, timeout);
 				}
 			},
 			tableClickDelegate : function(e) {
-				if (e.target.tagName == 'TD') {
-					this.showMarkerPopup(e.target);
-				}
-				if ($(e.target).hasClass('btn-danger')) {
-					this.cancelSubscribe(e.target);
-				}
-				if ($(e.target).hasClass('btn-success')) {
+				var el = e.target;
+				if (el.tagName == 'TD' && el.className != 'f-action') {
+					this.showMarkerPopup(el);
+				} else if ($(el).hasClass('btn-danger')) {
+					this.cancelSubscribe(el);
+				} else if ($(el).hasClass('btn-success')) {
+					if ($('input.row:checked').length == 0) {
+						return this.alert("No POI selected", "error");
+					}
+
 					if (!this.loginedEmail()) {
 						$('#inputEmail').closest('.control-group').show();
 					} else {
 						$('#inputEmail').closest('.control-group').hide();
 					}
-					var $tr = $(e.target).closest('tr');
+					var $tr = $(el).closest('tr');
 					var $tb = $tr.closest('table');
 					var id = this.getMarkerIdByRow($tr);
-					$('#point').val(id);
 					$('#sw_level_threshold').val($tr.find('.f-level').html());
 					$('#sw_flow_threshold').val($tr.find('.f-flow').html());
 					$('#frequency').val($tr.find('.f-frequency').html());
 					$('.modal h3').html($tb.attr('id') == 'list-point' ? 'Point Of Interest' : 'Station Of Interest');
-
 					$('.modal').modal('show');
+				} else if (el.tagName == 'INPUT') {
+					if (el.name == 'all') {
+						$('input[name=row]').attr('checked', el.checked);
+					}
 				}
 			},
 			showMarkerPopup : function(target) {
@@ -120,25 +119,39 @@
 				map.openPopup(id);
 			},
 			cancelSubscribe : function(target) {
-				var $tr = $(target).closest('tr'), $tbody = $tr.parent();
-				var id = this.getMarkerIdByRow($tr);
-				var marker = map.getLayerById(id);
-				if (marker) {
-					var app = this;
-					marker.cancelSubscribe(this.loginedEmail(), function(json) {
-						if (json.error) {
-							$.app.alert('Cancel subscribe failure', json.error, 'error');
-						} else {
-							$.app.alert('Cancel subscribe success', 'success');
-							$tr.remove();
-							if (!$tbody.children().length) {
-								$tbody.closest('table').hide();
+				var $tb = $(target).closest('table');
+				var app = this;
+
+				//var url = location.origin + "/GIS-SFU-cancel-subscribe"
+				var url = "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=Unsubscribe"//
+				+ "&email=" + this.loginedEmail();
+				var url = location.origin;
+
+				$.ajax({
+					url : '/proxy',
+					data : {
+						url : url,
+					},
+					//dataType : 'json',
+					success : function(json) {
+						$tb.find('tbody tr').each(function(index, tr) {
+							var id = app.getMarkerIdByRow(tr);
+							var marker = map.getLayerById(id);
+							if (marker) {
+								marker.groupLayer.removeLayer(marker);
+								$(tr).remove();
+								map.closePopup(id);
 							}
-							app.adjustMapHeight();
-						}
-					});
-				}
-				map.closePopup(id);
+						});
+						$tb.hide();
+						app.adjustMapHeight();
+					},
+					error : function(xhr, textStatus, e) {
+						typeof callback == 'function' && callback({
+							error : textStatus || e
+						});
+					},
+				});
 			},
 			doSubscribe : function() {
 				var email = this.loginedEmail();
@@ -154,27 +167,58 @@
 						return $.app.alert('Please leave your email', 'warning');
 					}
 				}
-				var data = {
-					email : email,
-					poi_type : $('.modal h3').html() == 'Point Of Interest' ? 'P' : 'S',
-					sw_level_threshold : $('#sw_level_threshold').val(),
-					sw_flow_threshold : $('#sw_flow_threshold').val(),
-					frequency : $('#frequency').val(),
-				};
-
-				var marker_id = $('#point').val();
-				var marker = map.getLayerById(marker_id);
-				var $tr = this.getRowByMarkerId(marker_id);
-
+				var data = [], marker_ids = [];
+				$('input.row:checked').each(function(index, input) {
+					var marker_id = input.value;
+					var marker = map.getLayerById(marker_id);
+					var latlng = marker.getLatLng();
+					data.push({
+						email : email,
+						sw_level_threshold : $('#sw_level_threshold').val(),
+						sw_flow_threshold : $('#sw_flow_threshold').val(),
+						frequency : $('#frequency').val(),
+						poi_type : $('.modal h3').html() == 'Point Of Interest' ? 'P' : 'S',
+						lat : latlng.lat.toFixed(8),
+						lng : latlng.lng.toFixed(8),
+					});
+					marker_ids.push(marker_id);
+				});
 				var app = this;
-				marker.subscribe(data, function(json) {
-					$('.modal').modal('hide');
-					if (json.error) {
-						$.app.alert('Subscribe failure', json.error, 'error');
-					} else {
-						app.showMarkerInfoRow(marker);
-						$.app.alert('Subscribe success', 'success');
-					}
+
+				/**
+				 * @see https://github.com/tesera/OGC-CHISP/wiki/GIS-FCU-Subscription-Broker-API
+				 */
+				var url = "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=subscribe"
+				// A temporary substitution
+				//var url = location.origin + "/GIS-SFU-subscribe"
+				$.ajax({
+					url : '/proxy',
+					type : 'post',
+					data : {
+						url : url,
+						json : JSON.stringify(data),
+					},
+					dataType : 'json',
+					success : function(json) {
+						if (json.code == 'Success') {
+							for (var i = 0, poiID; poiID = json.poiIDs[i]; i++) {
+								var marker_id = marker_ids[i];
+								var marker = map.getLayerById(marker_id);
+								marker.setStatus('Pending');
+								marker.data.type = 'P';
+								app.showMarkerInfoRow(marker);
+							}
+							$('.modal').modal('hide');
+							app.alert('Subscribe ' + json.poiIDs.join(',') + ' success', 'success');
+						} else {
+							$('.modal').modal('hide');
+							app.alert('Subscribe error', json.message, 'error');
+						}
+					},
+					error : function(xhr, status, e) {
+						$('.modal').modal('hide');
+						app.alert('Subscribe error', status + ' : ' + e, 'error');
+					},
 				});
 			},
 			showMarkerInfoRow : function(marker) {
@@ -205,28 +249,36 @@
 					'</td>', //
 					'</tr>'].join(''));
 				} else {
-					if ($('#list-point').find('thead tr').length == 0) {
-						$('#list-point').find('thead').append(["<tr>", //
+					var $tb = $('#list-point');
+					if ($tb.find('thead tr').length == 0) {
+						$tb.find('thead').append(["<tr>", //
 						"<th></th><th>#</th><th>Location</th>", //
 						"<th>sw_level_threshold</th><th>sw_flow_threshold</th><th>freqency</th>", //
-						"<th>Description</th><th>Status</th><th></th>", //
-						"</tr>"].join(''));
+						'<th>Description</th><th>Status</th>', //
+						'<th class="f-chb hide"><input type="checkbox" class="all" checked="checked" /></th>', //
+						'<th class="f-action"></th></tr>'].join(''));
 					}
 					if (this.getRowByMarkerId(id).length == 0) {
-						$('#list-point').show().find('tbody').prepend([//
+						rows = $tb.find('tbody tr').length;
+						rows >= 1 && $tb.find('tbody tr:first .f-action').remove();
+						$tb.show().find('tbody').prepend([//
 						'<tr id="marker_' + id + '" class="row">', //
 						'<td class="f-id"></td><td class="f-latlng"></td>', //
 						'<td class="f-level"></td><td class="f-flow"></td><td class="f-frequency"></td>', //
 						'<td>Point of interest</td><td class="f-status"><span class="label"></span></td>', //
-						'<td class="f-action">', //
+						'<td class="f-chb hide">', //
+						data.poi_id ? '' : '<input type="checkbox" class="row" checked="checked" value="' + id + '" />', //
+						'</td>', //
+						'<td class="f-action" rowspan="' + (rows + 1) + '">', //
 						' <button class="btn btn-mini btn-danger">Cancel</button>', //
-						' <button class="btn btn-mini btn-success">Subscribe</button>', //
+						' <button class="btn btn-mini btn-success hide">Subscribe</button>', //
 						'</td>', //
 						'</tr>'].join(''));
+						data.status == 'Selected' && rows >= 1 && $('.f-chb').show();
 					}
 				}
 
-				$tr = this.getRowByMarkerId(id);
+				$tr = this.getRowByMarkerId(id), $tb = $tr.closest('table');
 				$tr.find('.f-id').html(id);
 				$tr.find('.f-latlng').html(latlng.lng.toFixed(8) + ' / ' + latlng.lat.toFixed(8));
 				$tr.find('.f-level').html(data.sw_level_threshold || '');
@@ -234,18 +286,20 @@
 				$tr.find('.f-frequency').html(data.frequency || '');
 				$tr.find('.f-status .label').html(data.status)//
 				.removeClass().addClass(this.statusClass[data.status] || '');
-				$tr.find('.f-action .btn-danger')[{selected:1,invalid:1}[data.status] ? 'show' : 'hide']();
-				$tr.find('.f-action .btn-success')[data.status == 'invalid' ? 'hide' : 'show']();
+				data.status == 'Selected' && $tr.find('.f-action .btn-success').show();
+				data.status == 'Pending' && $tr.find('.f-chb').html('');
+				$tb.find('input.row').length == 0 && $('.f-chb').hide();
+				$tb.find('.label-selected').length == 0 && $tr.find('.f-action .btn-success').hide();
 
 				$('#list-container').slideDown("fast", function() {
 					app.adjustMapHeight();
 				});
 			},
 			statusClass : {
-				selected : "label",
-				pending : "label label-warning",
-				active : "label label-success",
-				invalid : "label label-important",
+				Selected : "label label-selected",
+				Pending : "label label-warning",
+				Active : "label label-success",
+				Invalid : "label label-important",
 			},
 			adjustMapHeight : function() {
 				if ($('#list-station, #list-point').find('tbody tr').length >= 5) {
@@ -263,6 +317,9 @@
 			},
 			getRowByMarkerId : function(marker_id) {
 				return $('#marker_' + marker_id);
+			},
+			alert : function() {
+				$.app && $.app.alert.apply(this, arguments);
 			},
 		});
 
@@ -308,7 +365,9 @@
 			style : {
 				color : '#0266C8', // for svg marker and cluster marker
 			},
-			url : location.origin + '/GIS-SFU-subscription.json', //?email=' + app.email + '&_=' + Math.random(),
+			//url : location.origin + '/GIS-SFU-subscription.json',
+			url : "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=GetUserSubscription",
+			email : app.loginedEmail(),
 			click : function() {
 				var t0, t1, staticObj = {};
 				return function(e) {
@@ -317,8 +376,17 @@
 					app.recognizeMapClickAndDblclick(e.latlng, interval, staticObj);
 				}
 			}(),
+			onEmailLogin : function() {
+				$.app.on("login", function(email) {
+					this.options.email = email;
+					this.load();
+				}, this);
+			},
 			onMarkerAdded : function(marker) {
 				app.showMarkerInfoRow(marker);
+			},
+			showMessage : function(msg, status) {
+				$.app.alert('Point Of Interest :<br />' + msg, status);
 			},
 		}).addTo(map), "Point Of Interest");
 

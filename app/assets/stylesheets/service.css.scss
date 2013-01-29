@@ -65,13 +65,18 @@
   text-align: center;
 }
 
-.alert-success, .alert-error, .alert-warning {
-   position: absolute;
-   width: 40%;
-   left: 50%;
-   top: 41px;
-   margin-left: -20%;
+
+.alert-container {
+  position: absolute;
+  width: 40%;
+  left: 50%;
+  top: 41px;
+  margin-left: -20%;
 }
+.alert-container .alert {
+  margin-bottom: 3px;
+}
+
 
 .navbar input, .navbar button.btn, .navbar label.label {
   margin-left: 0px;

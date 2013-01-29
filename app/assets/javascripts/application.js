@@ -51,6 +51,7 @@ jQuery(function($) {
 				success : function(json) {
 					app.alert('Login success', 'success');
 					app.loginEmail(email);
+					app.trigger('login', email);
 				},
 				error : function(xhr, status, e) {
 					app.alert('Login failed', 'error');
@@ -87,11 +88,15 @@ jQuery(function($) {
 				content = '';
 			}
 			var html = '<h4>' + (title || '') + '</h4>' + (content || '');
-			var cls = 'alert-' + (type || 'success')
-			if ($('.' + cls).length == 0) {
-				$('<div class="alert ' + cls + ' hide"></div>').appendTo($('body'));
+			var cls = 'alert-' + (type || 'success');
+			if ($('.alert-container').length == 0) {
+				$('<div class="alert-container"></div>').appendTo($('body'));
 			}
-			$('.' + cls).html(html).show().fadeOut(5000, "linear");
+			$('<div class="alert ' + cls + ' hide"></div>')//
+			.appendTo($('.alert-container'))//
+			.html(html).show().fadeOut(5000, "linear", function() {
+				$(this).remove();
+			});
 		},
 	});
 	$.app = new appView;
