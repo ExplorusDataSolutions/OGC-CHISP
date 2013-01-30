@@ -29,6 +29,15 @@ CircleMarker = L.CircleMarker.extend({
 			L.CircleMarker.prototype.initialize.call(this, latlng, this.originStyle);
 		}
 	},
+	_initEvents : function() {
+		if (this.options.clickable) {
+			if (L.Browser.svg || !L.Browser.vml) {
+				// This is for css "cursor: pointer" effect
+				this._path.setAttribute('class', 'leaflet-clickable');
+			}
+		}
+	},
+
 	setOpacity : function() {
 	},
 	setZIndexOffset : function() {
@@ -36,17 +45,6 @@ CircleMarker = L.CircleMarker.extend({
 	_initPath : function() {
 		L.CircleMarker.prototype._initPath.apply(this, arguments);
 		this._path.id = L.Util.stamp(this);
-	},
-	_onMouseClick : function(e) {
-		if (this._map.dragging && this._map.dragging.moved()) {
-			return;
-		}
-
-		this._fireMouseEvent(e);
-		//Disable this to enable bubble
-		//L.DomEvent.stopPropagation(e);
-
-		this.setPendingStatus();
 	},
 	isFromWFS : function() {
 		return this.data && this.data.id;

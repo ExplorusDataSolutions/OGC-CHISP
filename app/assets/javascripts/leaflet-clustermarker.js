@@ -35,8 +35,14 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 
 		this.on('loading', this._onStatusLoading, this);
 		this.on('load', this._onStatusLoad, this);
+		options.onLoad && this.on('load', options.onLoad, this);
 
 		this.load();
+	},
+
+	addLayer : function(layer) {
+		layer.groupLayer = this;
+		return L.MarkerClusterGroup.prototype.addLayer.apply(this, arguments);
 	},
 
 	load : function() {
@@ -101,41 +107,6 @@ var MarkerClusterGroup = L.MarkerClusterGroup.extend({
 			iconSize : new L.Point(12, 12),
 			color : cluster._group.options.style.color,
 		});
-	},
-
-	//Overrides L.MarkerClusterGroup.onAdd
-	onAdd : function(map) {
-		map._initPathRoot();
-
-		L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
-		L.DomEvent.on(map._pathRoot, 'mouseover', this._onMouseOver, this);
-		L.DomEvent.on(map._pathRoot, 'mouseout', this._onMouseOut, this);
-
-		L.MarkerClusterGroup.prototype.onAdd.apply(this, arguments);
-	},
-
-	_onMouseClick : function(e) {
-		if (e.target.tagName == 'svg') {
-			// click on map, to bubble
-		} else {
-			var marker = this._map.getLayerById(e.target.id);
-			this._map.fire('clickMarker', {
-				marker : marker
-			});
-			L.DomEvent.stopPropagation(e);
-		}
-	},
-
-	_onMouseOver : function(e) {
-		if (e.target.tagName == 'path') {
-			this._map.openPopup(e.target.id);
-		}
-	},
-
-	_onMouseOut : function(e) {
-		if (e.target.tagName == 'path') {
-			this._map.closePopup(e.target.id);
-		}
 	},
 });
 

@@ -52,6 +52,7 @@ var MarkerGroup = L.LayerGroup.extend({
 		alert(status + ' : ' + msg);
 	},
 
+	stationPoints : [],
 	load : function() {
 		var me = this, options = me.options;
 		if (options.url && options.email) {
@@ -72,12 +73,13 @@ var MarkerGroup = L.LayerGroup.extend({
 					var marker, point, data;
 					for (var i = 0, row; row = json[i]; i++) {
 						if (row.poiType == 'S') {
+							me.stationPoints.push(row);
 							continue;
 						}
 						point = [row.lat, row.lng];
 						data = {
 							poi_id : row.poiID,
-							type : row.poi_type,
+							poi_type : row.poiType,
 							status : row.status,
 						}
 						marker = new CircleMarker(point, data, options.style);
@@ -98,12 +100,9 @@ var MarkerGroup = L.LayerGroup.extend({
 	onAdd : function(map) {
 		map._initPathRoot();
 
-		this.options.click && map.on('click', this.options.click, this);
+		this.options.onClick && L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
+		this.options.onLoad && this.on('load', this.options.onLoad, this);
 		this.options.onEmailLogin && this.options.onEmailLogin.call(this);
-
-		L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
-		L.DomEvent.on(map._pathRoot, 'mouseover', this._onMouseOver, this);
-		L.DomEvent.on(map._pathRoot, 'mouseout', this._onMouseOut, this);
 
 		L.LayerGroup.prototype.onAdd.apply(this, arguments);
 
@@ -111,23 +110,10 @@ var MarkerGroup = L.LayerGroup.extend({
 	},
 
 	_onMouseClick : function(e) {
-		if (e.target.tagName == 'svg') {
-			// click on map, to bubble
-		} else {
-			L.DomEvent.stopPropagation(e);
+		if (this._map.dragging && this._map.dragging.moved()) {
+			return;
 		}
-	},
-
-	_onMouseOver : function(e) {
-		if (e.target.tagName == 'path') {
-			this._map.openPopup(e.target.id);
-		}
-	},
-
-	_onMouseOut : function(e) {
-		if (e.target.tagName == 'path') {
-			this._map.closePopup(e.target.id);
-		}
+		this.options.onClick.call(this, e);
 	},
 
 	addLayer : function(layer) {
