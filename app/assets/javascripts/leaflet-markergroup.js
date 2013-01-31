@@ -55,8 +55,8 @@ var MarkerGroup = L.LayerGroup.extend({
 	stationPoints : [],
 	load : function() {
 		var me = this, options = me.options;
+
 		if (options.url && options.email) {
-			me.clearLayers();
 			me.fire('loading');
 
 			var url = options.url + '&email=' + options.email;
@@ -103,6 +103,7 @@ var MarkerGroup = L.LayerGroup.extend({
 		this.options.onClick && L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
 		this.options.onLoad && this.on('load', this.options.onLoad, this);
 		this.options.onEmailLogin && this.options.onEmailLogin.call(this);
+		this.options.onEmailLogout && this.options.onEmailLogout.call(this);
 
 		L.LayerGroup.prototype.onAdd.apply(this, arguments);
 

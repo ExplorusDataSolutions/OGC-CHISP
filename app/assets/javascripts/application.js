@@ -70,6 +70,7 @@ jQuery(function($) {
 					$('.btn-login').parent().find('input').val('')
 					$('.btn-login').parent().show();
 					$('.btn-logout').parent().hide();
+					app.trigger('logout');
 				},
 				error : function(xhr, status, e) {
 					app.alert('Logout failed', 'error');
