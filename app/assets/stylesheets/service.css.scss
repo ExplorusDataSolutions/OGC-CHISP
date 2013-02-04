@@ -73,7 +73,7 @@
   margin-bottom: 0px;
 
   th {
-    padding: 0 5px;
+    padding: 1px 5px 0;
   }
   th.f-id, th.f-status {
     text-align: center;
@@ -100,12 +100,43 @@
       text-align: center;
     }
   }
-  .f-chb {
+  th.f-chb {
     text-align: center;
+    .btn {
+      padding-left: 12px;
+      .caret {
+        margin: 8px 6px;
+      }
+    }
+    ul {
+      min-width: 100px;
+      margin-right: 30px;
+      text-align: left;
+      li {
+        padding: 3px 10px;
+        .btn {
+          width: 100%;
+        }
+      }
+    }
+  }
+  td.f-chb {
+    width: 80px;
+    padding-right: 20px;
+    text-align: right;
     input {
       margin: auto;
     }
   }
+}
+
+.fht-table-wrapper {
+  .fht-table .fht-cell {
+    height: 0px;
+  }
+  .fht-thead {
+    overflow: visible;
+  }   
 }
 
 .f-action {

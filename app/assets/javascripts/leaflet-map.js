@@ -19,7 +19,7 @@ var Map = L.Map.extend({
 			var markerId = e.target.id;
 			var marker = this.getLayerById(markerId);
 			if (marker) {
-				this.openMarkerPopup(markerId);
+				this.openMarkerPopup(marker);
 				this.options.onMarkerHover && this.options.onMarkerHover(marker, true);
 			}
 		}
@@ -29,13 +29,14 @@ var Map = L.Map.extend({
 			var markerId = e.target.id;
 			var marker = this.getLayerById(markerId);
 			if (marker) {
-				this.closeMarkerPopup(markerId);
+				this.closeMarkerPopup(marker);
 				this.options.onMarkerHover && this.options.onMarkerHover(marker, false);
 			}
 		}
 	},
-	openMarkerPopup : function(markerId) {
-		var marker = this.getLayerById(markerId);
+	openMarkerPopup : function(marker) {
+		var markerID = L.Util.stamp(marker);
+
 		var latlng = marker.getLatLng();
 		var rows = [];
 		for (var key in marker.data) {
@@ -44,21 +45,19 @@ var Map = L.Map.extend({
 		var content = rows.join('<br />');
 
 		this._popup || (this._popup = new L.Popup({
-			markerId : markerId,
+			markerID : markerID,
 			offset : new L.Point(0, -3),
 		}));
 		this._popup.setLatLng(latlng).setContent(content);
 		L.Map.prototype.openPopup.call(this, this._popup);
 	},
-	closeMarkerPopup : function(markerId) {
-		if (markerId) {
-			if (this._popup && this._popup.options.markerId == markerId) {
-				return this.closePopup();
-			} else {
-				return this;
-			}
+	closeMarkerPopup : function(marker) {
+		var markerID = L.Util.stamp(marker);
+
+		if (this._popup && this._popup.options.markerID == markerID) {
+			return this.closePopup();
 		} else {
-			return L.Map.prototype.closePopup.call(this);
+			return this;
 		}
 	},
 	/**

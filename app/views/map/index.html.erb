@@ -8,8 +8,33 @@
 					<th>sw_level_threshold</th><th>sw_flow_threshold</th><th>freqency</th>
 					<th>Description</th><th class="f-status">Status</th>
 					<th class="f-chb">
-					<input type="checkbox" class="all" />
-					</th>
+					<div class="btn-group">
+						<button class="btn btn-mini dropdown-toggle" data-toggle="dropdown">
+							Actions <span class="caret"></span>
+						</button>
+						<ul class="dropdown-menu pull-right f-action">
+							<li>
+								<button class="btn btn-mini btn-success subscribe">
+									Subscribe
+								</button>
+							</li>
+							<li>
+								<button class="btn btn-mini btn-danger cancel">
+									Cancel
+								</button>
+							</li>
+							<li>
+								<button class="btn btn-mini btn-primary update">
+									Update
+								</button>
+							</li>
+							<li>
+								<button class="btn btn-mini btn-warning unsubscribe">
+									Unsubscribe
+								</button>
+							</li>
+						</ul>
+					</div></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -23,20 +48,6 @@
 				</tr>
 			</tbody>
 		</table>
-	</div>
-	<div id="toolbar" class="f-action">
-		<button class="btn btn-mini btn-success subscribe">
-			Subscribe
-		</button>
-		<button class="btn btn-mini btn-danger cancel">
-			Cancel
-		</button>
-		<button class="btn btn-mini btn-primary update">
-			Update
-		</button>
-		<button class="btn btn-mini btn-warning unsubscribe">
-			Unsubscribe
-		</button>
 	</div>
 </div>
 <div class="modal hide fade">
@@ -120,20 +131,14 @@
 				if (el.tagName == 'TD' && el.className != 'f-action') {
 					var $tr = $el.closest('tr');
 					var markerID = this.getMarkerIdByRow($tr);
-					map.openMarkerPopup(markerID);
+					var marker = map.getLayerById(markerID);
+					// Loading Soi marker here will be null
+					marker && map.openMarkerPopup(marker);
 				} else if ($el.hasClass('unsubscribe') || $el.hasClass('cancel')) {
 					this.cancelSubscribe(el);
 				} else if ($el.hasClass('subscribe') || $el.hasClass('update')) {
 					this.showSubscribeModal(el);
 				} else if (el.tagName == 'INPUT') {
-					if ($el.hasClass('all')) {
-						$('input.row').attr('checked', el.checked);
-					} else if ($el.hasClass('row') && el.checked == false) {
-						var markerID = $el.val(), marker = map.getLayerById(markerID);
-						if (!marker.data.poiID) {
-							this.removeMarkerRow(markerID);
-						}
-					}
 					this.updateButtonStatus();
 				}
 			},
@@ -255,8 +260,7 @@
 				var $tb = $('#list-point'), $td = $tb.find('td.f-action:visible');
 				$tr.hide('slow', function() {
 					$tr.remove();
-					//var rows = $tb.find('tbody tr:visible').length;
-					//$td.remove().appendTo($tb.find('tbody tr:visible:first')).attr('rowspan', rows);
+					app.updateButtonStatus();
 					$('#list-container').slideDown("slow", function() {
 						app.adjustMapHeight();
 					});
@@ -403,27 +407,23 @@
 			findOrAddRow : function(trID) {
 				var $tb = $('#list-point').show(), $tr = $('#' + trID);
 				if ($tr.length == 0) {
-					//rows = $tb.find('tbody tr:visible').length;
-					//rows >= 1 && $tb.find('tbody tr:first .f-action').remove();
 					var tpl_html = $tb.find('tr.tpl').html();
 					$tb.find('tbody').prepend('<tr id="' + trID + '">' + tpl_html + '</tr>');
 					$tr = $('#' + trID);
-					//$tr.find('.f-action').attr('rowspan', rows + 1);
 					$tr.find('.f-chb input').addClass('row');
 				}
-				$tr.find('td:not(.f-action)').highlight();
+				$tr.find('td').highlight();
 				return $tr;
 			},
 			updateButtonStatus : function() {
 				var $checkedRows = $('input.row:checked').closest('tr');
-				$('input.all').attr('checked', $checkedRows.length == $('input.row').length);
-				var rowsToSubscribe = $checkedRows.find('.label-selected, .label-pending').length;
-				$('.f-action:visible .btn-success').attr('disabled', rowsToSubscribe == 0);
-				var rowsToUpdate = $checkedRows.find('.label-success').length;
-				$('.f-action:visible .btn-primary').attr('disabled', rowsToUpdate == 0);
-				$('.f-action:visible .btn-warning').attr('disabled', rowsToUpdate == 0);
-				var rowsToCancel = $checkedRows.find('.label:not(.label-success)').length;
-				$('.f-action:visible .btn-danger').attr('disabled', rowsToCancel == 0);
+				var rowsToSubscribe = $checkedRows.find('.selected, .pending').length;
+				$('.f-action .subscribe').attr('disabled', rowsToSubscribe == 0);
+				var rowsToUpdate = $checkedRows.find('.active').length;
+				$('.f-action .unsubscribe').attr('disabled', rowsToUpdate == 0);
+				$('.f-action .update').attr('disabled', rowsToUpdate == 0);
+				var rowsToCancel = $checkedRows.find('.label:not(.active)').length;
+				$('.f-action .cancel').attr('disabled', rowsToCancel == 0);
 			},
 			adjustMapHeight : function() {
 				var $tb = $('#list-point'), $wrapper = $('#list-wrapper');
@@ -435,8 +435,13 @@
 					//$wrapper.css('overflow', 'hidden');
 					if (!$tb[0]._fixed) {
 						$tb.fixedHeaderTable();
-						$tb.parent().parent().find('.fht-thead .fht-table')//
-						.addClass('list-point table table-striped table-bordered table-hover table-condensed');
+						$tb.parent().css('height', $tb.parent().height() + 4 + 'px')
+						$headtb = $tb.parent().parent().find('.fht-thead .fht-table');
+						$headtb.addClass('list-point table table-striped table-bordered table-hover table-condensed');
+						$th = $headtb.find('th.f-chb');
+						$td = $tb.find('td.f-chb');
+						$th.css('width', $td.outerWidth() - ($th.outerWidth() - $th.width()) + 'px');
+						$tb.css('margin-top', 3 - $td.outerHeight() + 'px')
 						$tb[0]._fixed = true;
 					}
 				} else {
@@ -444,7 +449,7 @@
 					$wrapper.css('overflow', 'none');
 				}
 				// 20 is for chrome bottom status area
-				var h = $tb.is(':visible') ? $wrapper.height() + $('#toolbar').height() + 5 : 0;
+				var h = $tb.is(':visible') ? $wrapper.height() : 0;
 				$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
 			},
 			getMarkerIdByRow : function(tr) {
