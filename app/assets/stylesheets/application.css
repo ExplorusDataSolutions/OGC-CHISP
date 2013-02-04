@@ -15,7 +15,6 @@
  *= require leaflet
  *= require leaflet.markercluster
  *= require leaflet.markercluster.default
- *= require leaflet.draw
  *= require service
  */
 
