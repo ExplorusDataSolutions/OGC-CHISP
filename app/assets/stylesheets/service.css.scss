@@ -15,9 +15,34 @@
   }
 }
 
-.navbar .nav.pull-right {
-  margin-right: 20px;
+
+.navbar {
+  .nav.pull-right  {
+    margin-right: 20px;
+  }
+  input, button.btn, label.label {
+    margin-left: 0px;
+    margin-top: 10px;
+    margin-bottom: 0px;
+    padding: 0 6px;
+  }
+  input, label.label {
+    width: 200px;
+    font-size: 14px;
+    font-weight: normal;
+    border: 1px solid black;
+  }
+  button.btn {
+    width: 80px;
+  }
+  label.label {
+    height: 20px;
+    line-height: 20px;
+    vertical-align: middle;
+    background: none;
+  }
 }
+
 
 .layer-status {
   width: 12px;
@@ -42,27 +67,51 @@
   border: 1px solid #00c000;
 }
 
-#list-station, #list-point {
+
+#list-point {
   font-size: 12px;
   margin-bottom: 0px;
-}
 
-#list-station th, #list-point th {
-  padding: 0 5px;
-}
-
-#list-container input {
-  margin-top: 0px;
-  margin-bottom: 0px;
-  width: auto;
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
-#list-container .f-status {
-  padding-top: 5px;
-}
-#list-container .f-action {
-  text-align: center;
+  th {
+    padding: 0 5px;
+  }
+  th.f-id, th.f-status {
+    text-align: center;
+  }
+  td.f-id {
+    text-align: center;
+  }
+  tr.hover td {
+    background-color: whitesmoke;
+  }
+  input {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    width: auto;
+    padding-top: 0px;
+    padding-bottom: 0px;
+  }
+  td.f-status {
+    padding-top: 5px;
+    text-align: center;
+    .label {
+      width: 60px;
+      margin: auto;
+      text-align: center;
+    }
+  }
+  .f-chb {
+    text-align: center;
+    input {
+      margin: auto;
+    }
+  }
+  .f-action {
+    text-align: center;
+    .btn {
+      margin: 5px auto;
+    }
+  }
 }
 
 
@@ -72,46 +121,23 @@
   left: 50%;
   top: 41px;
   margin-left: -20%;
-}
-.alert-container .alert {
-  margin-bottom: 3px;
-}
-
-
-.navbar input, .navbar button.btn, .navbar label.label {
-  margin-left: 0px;
-  margin-top: 10px;
-  margin-bottom: 0px;
-  padding: 0 6px;
+  
+  .alert {
+    margin-bottom: 3px;
+  }
 }
 
-.navbar input, .navbar label.label {
-  width: 200px;
-  font-size: 14px;
-  font-weight: normal;
-  border: 1px solid black;
-}
 
-.navbar button.btn {
-  width: 80px;
-}
-
-.navbar label.label {
-  height: 20px;
-  line-height: 20px;
-  vertical-align: middle;
-  background: none;
-}
-
-.form-horizontal .control-label {
-  float: left;
-  width: 200px;
-}
-
-.form-horizontal .controls {
-  margin-left: 220px;
-}
-
-.form-horizontal .controls input {
-  width: 280px;
+.form-horizontal {
+  .control-label {
+    float: left;
+    width: 200px;
+  }
+  
+  .controls {
+    margin-left: 220px;
+    input {
+      width: 280px;
+    }
+  }
 }

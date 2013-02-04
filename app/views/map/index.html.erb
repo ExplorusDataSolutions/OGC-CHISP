@@ -3,9 +3,9 @@
 	<table id="list-point" class="table table-striped table-bordered table-hover table-condensed hide">
 		<thead>
 			<tr>
-				<th>#</th><th>Location</th>
+				<th class="f-id">#</th><th>Location</th>
 				<th>sw_level_threshold</th><th>sw_flow_threshold</th><th>freqency</th>
-				<th>Description</th><th>Status</th>
+				<th>Description</th><th class="f-status">Status</th>
 				<th class="f-chb">
 				<input type="checkbox" class="all" />
 				</th>
@@ -24,7 +24,7 @@
 				<button class="btn btn-mini btn-danger">
 					Cancel
 				</button>
-				<button class="btn btn-mini btn-success hide">
+				<button class="btn btn-mini btn-success">
 					Subscribe
 				</button></td>
 			</tr>
@@ -78,69 +78,64 @@
 		var appView = Backbone.View.extend({
 			el : $("body"),
 			events : {
+				"mouseover #list-container" : "tableMouseOverDelegate",
+				"mouseout #list-container" : "tableMouseOutDelegate",
 				"click #list-container" : "tableClickDelegate",
-				"click .btn-primary" : "doSubscribe",
+				"click .modal .btn-primary" : "doSubscribe",
 			},
 			loginedEmail : function() {
 				var input = $('.navbar input[name=email]');
 				return input.is(':hidden') && input.val();
 			},
+			tableMouseOverDelegate : function(e) {
+				var $el = $(e.target);
+				if ($el.hasClass('btn-success')) {
+					$('input.row:checked').closest('tr').find('.label:not(.label-selected)').closest('tr').find('.f-chb input').attr('disabled', true);
+				} else if ($el.hasClass('btn-danger')) {
+					$('input.row:checked').closest('tr').find('.label-selected').closest('tr').find('.f-chb input').attr('disabled', true);
+				}
+			},
+			tableMouseOutDelegate : function(e) {
+				var $el = $(e.target);
+				if ($el.hasClass('btn-success')) {
+					$('input.row:checked').closest('tr').find(':not(.label-selected)').closest('tr').find('.f-chb input').attr('disabled', false);
+				} else if ($el.hasClass('btn-danger')) {
+					$('input.row:checked').closest('tr').find('.label-selected').closest('tr').find('.f-chb input').attr('disabled', false);
+				}
+			},
 			tableClickDelegate : function(e) {
-				var el = e.target;
+				var el = e.target, $el = $(el);
 				if (el.tagName == 'TD' && el.className != 'f-action') {
-					var $tr = $(el).closest('tr');
-					var markerId = this.getMarkerIdByRow($tr);
-					map.openMarkerPopup(markerId);
-				} else if ($(el).hasClass('btn-danger')) {
+					var $tr = $el.closest('tr');
+					var markerID = this.getMarkerIdByRow($tr);
+					map.openMarkerPopup(markerID);
+				} else if ($el.hasClass('btn-danger')) {
 					this.cancelSubscribe(el);
-				} else if ($(el).hasClass('btn-success')) {
-					if ($('input.row:checked').length == 0) {
-						return this.alert("No POI selected", "error");
-					}
-
-					if (!this.loginedEmail()) {
-						$('#inputEmail').closest('.control-group').show();
-					} else {
-						$('#inputEmail').closest('.control-group').hide();
-					}
-					var $tr = $(el).closest('tr');
-					var $tb = $tr.closest('table');
-					var id = this.getMarkerIdByRow($tr);
-					$('#sw_level_threshold').val($tr.find('.f-level').html());
-					$('#sw_flow_threshold').val($tr.find('.f-flow').html());
-					$('#frequency').val($tr.find('.f-frequency').html());
-					$('.modal h3').html($tb.attr('id') == 'list-point' ? 'Point Of Interest' : 'Station Of Interest');
-					$('.modal').modal('show');
+				} else if ($el.hasClass('btn-success')) {
+					this.showSubscribeModal(el);
 				} else if (el.tagName == 'INPUT') {
-					if ($(el).hasClass('all')) {
+					if ($el.hasClass('all')) {
 						$('input.row').attr('checked', el.checked);
-					} else if ($(el).hasClass('row')) {
-						$('input.all').attr('checked', $('input.row:not(:checked)').length == 0);
+					} else if ($el.hasClass('row') && el.checked == false) {
+						this.removeMarkerRow($el.val());
 					}
+					this.updateButtonStatus();
 				}
 			},
 			cancelSubscribe : function(target) {
 				var $tb = $(target).closest('table');
 				var app = this;
 
-				//var url = location.origin + "/GIS-SFU-cancel-subscribe"
-				var url = "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=Unsubscribe"//
-				+ "&email=" + this.loginedEmail();
-				var point_ids = [], marker_ids = [];
+				var poiIDs = [], markerIDs = [];
 				$('input.row:visible:checked').each(function(index, input) {
-					var markerId = input.value;
-					var marker = map.getLayerById(markerId);
-					if (marker.data.poi_id) {
-						point_ids.push(marker.data.poi_id);
-					} else {
-						app.hideMarkerInfoRow(marker);
+					var markerID = input.value;
+					var marker = map.getLayerById(markerID);
+					if (marker.data.poiID) {
+						poiIDs.push(marker.data.poiID);
+						markerIDs.push(markerID);
 					}
-					marker_ids.push(markerId);
 				});
-				if (point_ids.length == 0) {
-					return;
-				}
-				if (marker_ids.length == 0) {
+				if (poiIDs.length == 0) {
 					return app.alert('No points selected', 'warning');
 				}
 
@@ -148,17 +143,15 @@
 					url : '/proxy',
 					type : 'post',
 					data : {
-						url : url,
-						json : JSON.stringify(point_ids),
+						url : "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=Unsubscribe&email=" + this.loginedEmail(),
+						json : JSON.stringify(poiIDs),
 					},
 					dataType : 'json',
 					success : function(json) {
 						if (json.code == 'Success') {
 							app.alert(json.message, 'success');
-							for (var i = 0; i < marker_ids.length; i++) {
-								var markerId = marker_ids[i];
-								var marker = map.getLayerById(markerId);
-								app.hideMarkerInfoRow(marker);
+							for (var i = 0; i < markerIDs.length; i++) {
+								app.removeMarkerRow(markerIDs[i]);
 							}
 						} else if (json.code == 'DataNofFound') {
 							app.alert(json.message, 'warning');
@@ -171,6 +164,12 @@
 					},
 				});
 			},
+			showSubscribeModal : function(el) {
+				$('#inputEmail').closest('.control-group')[this.loginedEmail() ? 'hide' : 'show']();
+				$('.modal').modal('show');
+				this.$selectedInputs = $('input.row:visible:checked:not(:disabled)');
+			},
+			$selectedInputs : null,
 			doSubscribe : function() {
 				var email = this.loginedEmail();
 				if (email == '') {
@@ -185,11 +184,11 @@
 						return app.alert('Please leave your email', 'warning');
 					}
 				}
-				var data = [], marker_ids = [];
-				$('input.row:visible:checked').each(function(index, input) {
-					var markerId = input.value;
-					var marker = map.getLayerById(markerId);
-					if (marker.data.poi_type == 'P') {
+				var data = [], markerIDs = [];
+				this.$selectedInputs.each(function(index, input) {
+					var markerID = input.value;
+					var marker = map.getLayerById(markerID);
+					if (marker.data.poiType == 'P') {
 						var latlng = marker.getLatLng();
 						data.push({
 							email : email,
@@ -200,110 +199,167 @@
 							lat : latlng.lat.toFixed(8),
 							lng : latlng.lng.toFixed(8),
 						});
-					} else if (marker.data.poi_type == 'S') {
+					} else if (marker.data.poiType == 'S') {
 						data.push({
 							email : email,
 							sw_level_threshold : $('#sw_level_threshold').val(),
 							sw_flow_threshold : $('#sw_flow_threshold').val(),
 							frequency : $('#frequency').val(),
 							poiType : 'S',
-							stationID : marker.data.station_id,
+							stationID : marker.data.stationID,
 						});
 					}
-					marker_ids.push(markerId);
+					markerIDs.push(markerID);
 				});
 				if (data.length == 0) {
 					return app.alert('No points selected', 'warning');
 				}
 
-				/**
-				 * @see https://github.com/tesera/OGC-CHISP/wiki/GIS-FCU-Subscription-Broker-API
-				 */
-				var url = "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=subscribe"
-				// A temporary substitution
-				//var url = location.origin + "/GIS-SFU-subscribe"
-				$.ajax({
-					url : '/proxy',
-					type : 'post',
-					data : {
-						url : url,
-						json : JSON.stringify(data),
-					},
-					dataType : 'json',
-					success : function(json) {
-						$('.modal').modal('hide');
-						if (json.code == 'RequestFormateError') {
-							app.alert('Subscribe error', json.message, 'error');
-						} else if (!json instanceof Array) {
-							app.alert('Subscribe error', 'Unknown error', 'error');
-						} else {
-							var poi_ids = [];
-							for (var i = 0, row; row = json[i]; i++) {
-								var markerId = marker_ids[i];
-								var marker = map.getLayerById(markerId);
-								marker.setStatus(row.status);
-								marker.data.poi_id = row.poiID;
-								marker.data.poi_type = row.stationID ? 'S' : 'P';
-								app.showMarkerInfoRow(marker);
-								poi_ids.push(row.poiID);
-							}
-							app.alert('Subscribe ' + poi_ids.join(',') + ' success', 'success');
-						}
-					},
-					error : function(xhr, status, e) {
-						$('.modal').modal('hide');
-						app.alert('Subscribe error', status + ' : ' + e, 'error');
-					},
+				this.trigger('subscribe', data, markerIDs);
+			},
+			onMarkerHover : function(marker, hover) {
+				var trID = 'poi_' + marker.data.poiID;
+				var $tds = $('#' + trID)[hover ? 'addClass' : 'removeClass']('hover');
+			},
+			removeMarkerRow : function(markerID) {
+				var marker = map.getLayerById(markerID);
+				map.closeMarkerPopup(markerID);
+				marker.groupLayer.removeLayer(marker);
+
+				var trID = 'poi_' + marker.data.poiID;
+				var $tr = $('#' + trID);
+				if ($tr.length == 0) {
+					trID = 'marker_' + markerID;
+					$tr = $('#' + trID);
+				}
+				var $tb = $('#list-point'), $td = $tb.find('td.f-action:visible');
+				$tr.hide('slow', function() {
+					$tr.remove();
+
+					var rows = $tb.find('tbody tr:visible').length;
+					$td.remove().appendTo($tb.find('tbody tr:visible:first')).attr('rowspan', rows);
+
+					$('#list-container').slideDown("slow", function() {
+						app.adjustMapHeight();
+					});
 				});
 			},
-			hideMarkerInfoRow : function(marker) {
-				var markerId = L.Util.stamp(marker);
-				marker.groupLayer.removeLayer(marker);
-				map.closeMarkerPopup(markerId);
+			showPoiRow : function(marker) {
+				if (!app.loginedEmail()) {
+					return;
+				}
 
-				var $tb = $('#list-point');
-				var $tr = this.getRowByMarkerId(markerId);
-				var $td = $tb.find('td.f-action:visible');
-				$tr.remove();
-				var rows = $tb.find('tbody tr:visible').length;
-				$td.remove().appendTo($tb.find('tbody tr:visible:first')).attr('rowspan', rows);
-				$tb.find('tbody tr:visible').length == 0 && $tb.hide();
+				var data = marker.data, poiID = data.poiID, trID = 'poi_' + poiID;
+				var markerID = L.Util.stamp(marker), latlng = marker.getLatLng();
+				var $tr = this.findOrAddRow(trID);
+
+				$tr.find('.f-id').html(poiID);
+				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8));
+				$tr.find('.f-level').html(data.sw_level_threshold);
+				$tr.find('.f-flow').html(data.sw_flow_threshold);
+				$tr.find('.f-frequency').html(data.frequency);
+				$tr.find('.f-poi-type').html('Point Of Interest');
+				$tr.find('.f-chb input').val(markerID).attr('checked', $tr.find('.f-chb input').attr('checked') || !poiID);
+				$tr.find('.f-status .label').html(data.status).removeClass().addClass(this.statusClass[data.status] || '');
+
+				this.updateButtonStatus();
 
 				$('#list-container').slideDown("fast", function() {
 					app.adjustMapHeight();
 				});
 			},
-			showMarkerInfoRow : function(marker) {
-				var markerId = L.Util.stamp(marker);
-				var latlng = marker.getLatLng(), data = marker.data;
-
-				var $tb = $('#list-point'), $tr = this.getRowByMarkerId(markerId);
-				if ($tr.length == 0) {
-					rows = $tb.find('tbody tr:visible').length;
-					rows >= 1 && $tb.find('tbody tr:first .f-action').remove();
-					$tb.show().find('tbody').prepend(//
-					'<tr id="marker_' + markerId + '">' + $tb.find('tr.tpl').html() + '</tr>');
-					data.status == 'Selected' && $('.f-chb');
-					$tr = this.getRowByMarkerId(markerId);
-					$tr.find('.f-chb input').addClass('row').attr('checked', !data.poi_id);
-					$tr.find('.f-action').attr('rowspan', rows + 1);
-				} else {
-					$tr.find('.f-chb input').attr('checked', !data.poi_id);
+			showSoiRow : function(data) {
+				if (!this.loginedEmail()) {
+					return;
 				}
-				$('input.all').attr('checked', $('input.row:not(:checked)').length == 0)
 
-				$tr.find('.f-id').html(data.poi_id || markerId);
-				$tr.find('.f-latlng').html(latlng.lng.toFixed(8) + ' / ' + latlng.lat.toFixed(8));
-				$tr.find('.f-level').html(data.sw_level_threshold || '');
-				$tr.find('.f-flow').html(data.sw_flow_threshold || '');
-				$tr.find('.f-frequency').html(data.frequency || '');
-				$tr.find('.f-poi-type').html(data.poi_type == 'P'//
-				? 'Point Of Interest' : data.poi_type == 'S' ? 'Station Of Interest' : '');
-				$tr.find('.f-chb input').val(markerId);
-				$tr.find('.f-status .label').html(data.status)//
-				.removeClass().addClass(this.statusClass[data.status] || '');
-				data.status == 'Selected' && $tr.find('.f-action .btn-success').show();
-				$tb.find('.label-selected').length == 0 && $tr.find('.f-action .btn-success').hide();
+				var poiID = data.poiID, trID = 'poi_' + poiID;
+				var $tr = this.findOrAddRow(trID);
+
+				$tr.find('.f-id').html(poiID);
+				$tr.find('.f-latlng').html('Loading...');
+				$tr.find('.f-level').html(data.sw_level_threshold);
+				$tr.find('.f-flow').html(data.sw_flow_threshold);
+				$tr.find('.f-frequency').html(data.frequency);
+				$tr.find('.f-poi-type').html('Station ID : ' + data.stationID);
+				$tr.find('.f-chb input').attr('checked', $tr.find('.f-chb input').attr('checked') || !poiID);
+				$tr.find('.f-status .label').html(data.status).removeClass().addClass(this.statusClass[data.status] || '');
+
+				this.updateButtonStatus();
+
+				$('#list-container').slideDown("fast", function() {
+					app.adjustMapHeight();
+				});
+			},
+			updateSoiRow : function(marker) {
+				if (!this.loginedEmail()) {
+					return;
+				}
+
+				var data = marker.data, poiID = data.poiID, trID = 'poi_' + poiID;
+				var markerID = L.Util.stamp(marker), latlng = marker.getLatLng();
+
+				var $tr = $('#' + trID);
+				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8)).highlight();
+				$tr.find('.f-chb input').val(markerID);
+			},
+			showNewPoiRow : function(marker) {
+				if (!app.loginedEmail()) {
+					return;
+				}
+
+				var markerID = L.Util.stamp(marker), latlng = marker.getLatLng();
+				var data = marker.data, trID = 'marker_' + markerID;
+				var $tr = this.findOrAddRow(trID);
+
+				$tr.find('.f-id').html('...');
+				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8));
+				$tr.find('.f-level, .f-flow, .f-frequency').html('');
+				$tr.find('.f-poi-type').html('Point Of Interest');
+				$tr.find('.f-chb input').val(markerID).attr('checked', true);
+				$tr.find('.f-status .label').html(data.status).removeClass().addClass(this.statusClass[data.status]);
+
+				this.updateButtonStatus();
+
+				$('#list-container').slideDown("fast", function() {
+					app.adjustMapHeight();
+				});
+			},
+			updateNewPoiRow : function(markerID, data) {
+				var marker = map.getLayerById(markerID);
+				marker.setStatus(data.status);
+				data = L.Util.extend(marker.data, data);
+
+				var poiID = data.poiID, trID = 'marker_' + markerID;
+				var $tr = this.findOrAddRow(trID);
+				$tr.attr('id', 'poi_' + poiID);
+				$tr.find('.f-id').html(poiID);
+				$tr.find('.f-level').html(data.sw_level_threshold);
+				$tr.find('.f-flow').html(data.sw_flow_threshold);
+				$tr.find('.f-frequency').html(data.frequency);
+				$tr.find('.f-status .label').html(data.status).removeClass().addClass(this.statusClass[data.status]);
+				$tr.find('td:not(.f-action)').highlight(function() {
+					$tr.find('.f-chb input').attr('checked', false);
+					app.updateButtonStatus();
+				});
+			},
+			showNewSoiRow : function(marker) {
+				if (!app.loginedEmail()) {
+					return;
+				}
+
+				var markerID = L.Util.stamp(marker), latlng = marker.getLatLng();
+				var data = marker.data, trID = 'marker_' + markerID;
+				var $tr = this.findOrAddRow(trID);
+
+				$tr.find('.f-id').html('...');
+				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8));
+				$tr.find('.f-level, .f-flow, .f-frequency').html('');
+				$tr.find('.f-poi-type').html('Station ID : ' + data.stationID);
+				$tr.find('.f-chb input').val(markerID).attr('checked', true);
+				$tr.find('.f-status .label').html(data.status).removeClass().addClass(this.statusClass[data.status]);
+
+				this.updateButtonStatus();
 
 				$('#list-container').slideDown("fast", function() {
 					app.adjustMapHeight();
@@ -315,28 +371,51 @@
 				Valid : "label label-success",
 				Invalid : "label label-important",
 			},
-			adjustMapHeight : function() {
-				if ($('#list-station, #list-point').find('tbody tr').length >= 5) {
-					$('#list-container').css('height', $('#list-container').height() + 'px');
-					$('#list-container').css('overflow', 'auto');
-				} else {
-					$('#list-container').css('height', 'auto');
-					$('#list-container').css('overflow', 'none');
+			findOrAddRow : function(trID) {
+				var $tb = $('#list-point').show(), $tr = $('#' + trID);
+				if ($tr.length == 0) {
+					rows = $tb.find('tbody tr:visible').length;
+					rows >= 1 && $tb.find('tbody tr:first .f-action').remove();
+					var tpl_html = $tb.find('tr.tpl').html();
+					$tb.find('tbody').prepend('<tr id="' + trID + '">' + tpl_html + '</tr>');
+					$tr = $('#' + trID);
+					$tr.find('.f-action').attr('rowspan', rows + 1);
+					$tr.find('.f-chb input').addClass('row');
 				}
-				var h = $('#list-container').is(':visible') ? $('#list-container').height() : 0;
+				$tr.find('td:not(.f-action)').highlight();
+				return $tr;
+			},
+			updateButtonStatus : function() {
+				var $checkedRows = $('input.row:checked').closest('tr');
+				$('input.all').attr('checked', $checkedRows.length == $('input.row').length);
+				var rowsToSubscribe = $checkedRows.find('.label-selected').length;
+				$('td.f-action:visible .btn-success').attr('disabled', rowsToSubscribe == 0);
+				var rowsToCancel = $checkedRows.find('.label:not(.label-selected)').length;
+				$('td.f-action:visible .btn-danger').attr('disabled', rowsToCancel == 0);
+			},
+			adjustMapHeight : function() {
+				var $tb = $('#list-point');
+				var $container = $('#list-container');
+				var visibleRows = $tb.find('tbody tr:visible').length;
+				visibleRows == 0 && $tb.hide();
+				if (visibleRows >= 5) {
+					$container.css('height', $container.height() + 'px');
+					$container.css('overflow', 'auto');
+				} else {
+					$container.css('height', 'auto');
+					$container.css('overflow', 'none');
+				}
+				// 20 is for chrome bottom status area
+				var h = $tb.is(':visible') ? $container.height() + 20 : 0;
 				$('#map').css('height', $(window).height() - $('#map').position().top - 4 - h + 'px');
 			},
 			getMarkerIdByRow : function(tr) {
-				return $(tr).attr('id').replace(/marker_/, '');
-			},
-			getRowByMarkerId : function(markerId) {
-				return $('#marker_' + markerId);
+				return $(tr).find('.f-chb input').val();
 			},
 			alert : function() {
 				$.app && $.app.alert.apply(this, arguments);
 			},
 			syncMarkers : function() {
-				app.quene = app.quene || [];
 				app.stationLayers = app.stationLayers || [];
 				app.markerLayer = app.markerLayer || null;
 
@@ -351,25 +430,19 @@
 						}
 					}
 				} else {
+					app.stationLayers.push(this);
 					if (app.stationPoints) {
 						app.showStationMarkers(this, app.stationPoints, app.markerLayer);
-					} else {
-						app.stationLayers.push(this);
 					}
 				}
 			},
-			showStationMarkers : function(layer, points, markerLayer) {
-				var marker, latlng;
-				for (var i = 0, point; point = points[i++]; ) {
-					layer.eachLayer(function(marker) {
-						if (marker.data.id == point.stationID) {
+			showStationMarkers : function(markerClusterLayer, stationData, markerLayer) {
+				var latlng, style = markerLayer.options.style;
+				for (var i = 0, row; row = stationData[i++]; ) {
+					markerClusterLayer.eachLayer(function(marker) {
+						if (marker.data.id == row.stationID) {
 							latlng = marker.getLatLng();
-							app.showMarkerInfoRow(new CircleMarker(latlng, {
-								poi_id : point.poiID,
-								poi_type : point.poiType,
-								status : point.status,
-								station_id : point.stationID,
-							}, markerLayer.options.style).addTo(markerLayer));
+							app.updateSoiRow(new CircleMarker(latlng, row, style).addTo(markerLayer));
 						}
 					});
 				}
@@ -378,11 +451,16 @@
 
 		var app = new appView;
 		app.adjustMapHeight();
-
+		$.prototype.highlight = function(callback) {
+			this.effect("highlight", {}, 3000, callback);
+		}
 		/**
 		 * Map and controls
 		 */
-		var map = new Map('map').setView([53, -100], 5);
+		var map = new Map('map', {
+			onMarkerHover : app.onMarkerHover,
+		}).setView([53, -100], 5);
+
 		var bounds = new L.LatLngBounds([48.01835, -101.904947], [60.008292, -89.069706]);
 		var layersControl = new LayersControl({}, {}, {
 			collapsed : false
@@ -411,7 +489,6 @@
 			style : {
 				color : '#0266C8', // for svg marker and cluster marker
 			},
-			//url : location.origin + '/GIS-SFU-subscription.json',
 			url : "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=GetUserSubscription",
 			email : app.loginedEmail(),
 			onClick : function() {
@@ -431,22 +508,22 @@
 						} else {
 							timer = setTimeout(function() {
 								timer = null;
-								app.showMarkerInfoRow(new CircleMarker(latlng, {
-									poi_type : 'P',
+								app.showNewPoiRow(new CircleMarker(latlng, {
+									poiType : 'P',
 									status : 'Selected',
 								}, style).addTo(layer));
 							}, timeout);
 						}
 					} else if (e.target.tagName == 'path') {
-						var markerId = e.target.id;
-						var marker = map.getLayerById(markerId);
+						var markerID = e.target.id;
+						var marker = map.getLayerById(markerID);
 						if (marker.groupLayer == this) {
-							app.showMarkerInfoRow(marker);
+							app.showPoiRow(marker);
 						} else {
-							app.showMarkerInfoRow(new CircleMarker(marker.getLatLng(), {
-								poi_type : 'S',
+							app.showNewSoiRow(new CircleMarker(marker.getLatLng(), {
+								poiType : 'S',
 								status : 'Selected',
-								station_id : marker.data.id,
+								stationID : marker.data.id,
 							}, style).addTo(layer));
 						}
 					}
@@ -461,15 +538,53 @@
 			onEmailLogout : function() {
 				$.app.on("logout", function() {
 					this.options.email = '';
-					this.eachLayer(function(marker) {
-						app.hideMarkerInfoRow(marker);
-					}, this);
+					$('#list-point').find('tbody tr:visible').remove();
+					app.adjustMapHeight();
 					this.clearLayers();
 				}, this);
 			},
 			onLoad : app.syncMarkers,
-			onMarkerAdded : function(marker) {
-				app.showMarkerInfoRow(marker);
+			onSubscribe : function() {
+				app.on('subscribe', function(data, markerIDs) {
+					$.ajax({
+						url : '/proxy',
+						type : 'post',
+						data : {
+							/**
+							 * @see https://github.com/tesera/OGC-CHISP/wiki/GIS-FCU-Subscription-Broker-API
+							 */
+							url : "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=subscribe",
+							json : JSON.stringify(data),
+						},
+						dataType : 'json',
+						success : function(json) {
+							$('.modal').modal('hide');
+							if (json.code == 'RequestFormateError') {
+								app.alert('Subscribe error', json.message, 'error');
+							} else if (!json instanceof Array) {
+								app.alert('Subscribe error', 'Unknown error', 'error');
+							} else {
+								var poiIDs = [];
+								for (var i = 0, row; row = json[i]; i++) {
+									app.updateNewPoiRow(markerIDs[i], row);
+									poiIDs.push(row.poiID);
+								}
+								app.alert('Subscribe ' + poiIDs.join(',') + ' success', 'success');
+							}
+						},
+						error : function(xhr, status, e) {
+							$('.modal').modal('hide');
+							app.alert('Subscribe error', status + ' : ' + e, 'error');
+						},
+						context : this,
+					});
+				}, this);
+			},
+			onPoiLoad : function(marker) {
+				app.showPoiRow(marker);
+			},
+			onSoiLoad : function(data) {
+				app.showSoiRow(data);
 			},
 			showMessage : function(msg, status) {
 				app.alert('Point Of Interest :<br />' + msg, status);

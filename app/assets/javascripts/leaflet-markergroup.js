@@ -65,28 +65,23 @@ var MarkerGroup = L.LayerGroup.extend({
 				data : {
 					url : url,
 				},
+				cache : false,
 				dataType : 'json',
 				success : function(json) {
 					if (json.code == 'UserNotFound') {
 						me.showMessage(json.message, 'error');
 					}
-					var marker, point, data;
-					for (var i = 0, row; row = json[i]; i++) {
-						if (row.poiType == 'S') {
-							me.stationPoints.push(row);
-							continue;
+					me.stationPoints = [];
+					for (var i = 0, data; data = json[i++]; ) {
+						if (data.poiType == 'S') {
+							me.stationPoints.push(data);
+							options.onSoiLoad && options.onSoiLoad(data);
+						} else if (data.poiType == 'P') {
+							marker = new CircleMarker([data.lat, data.lng], data, options.style);
+							me.addLayer(marker);
+							options.onPoiLoad && options.onPoiLoad(marker);
 						}
-						point = [row.lat, row.lng];
-						data = {
-							poi_id : row.poiID,
-							poi_type : row.poiType,
-							status : row.status,
-						}
-						marker = new CircleMarker(point, data, options.style);
-						me.addLayer(marker);
-						me.options.onMarkerAdded && me.options.onMarkerAdded(marker)
 					}
-
 					me.fire('load');
 				},
 				error : function(xhr, status, e) {
@@ -102,6 +97,7 @@ var MarkerGroup = L.LayerGroup.extend({
 
 		this.options.onClick && L.DomEvent.on(map._pathRoot, 'click', this._onMouseClick, this);
 		this.options.onLoad && this.on('load', this.options.onLoad, this);
+		this.options.onSubscribe && this.options.onSubscribe.call(this);
 		this.options.onEmailLogin && this.options.onEmailLogin.call(this);
 		this.options.onEmailLogout && this.options.onEmailLogout.call(this);
 

@@ -25,6 +25,7 @@ group :assets do
 end
 
 gem 'jquery-rails'
+gem 'jquery-ui-rails', '~> 3.0.1'
 gem 'leaflet-rails', '~> 0.4.5'
 gem 'leaflet-markercluster-rails', '~> 0.2.1'
 gem 'backbone-rails', '~> 0.9.9'

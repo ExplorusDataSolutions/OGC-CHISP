@@ -15,17 +15,27 @@ var Map = L.Map.extend({
 		L.DomEvent.on(this._pathRoot, 'mouseout', this.hideMarkerPopup, this);
 	},
 	showMarkerPopup : function(e) {
-		var markerId = e.target.id;
-		markerId && this.openMarkerPopup(markerId);
+		if (e.target.tagName == 'path') {
+			var markerId = e.target.id;
+			var marker = this.getLayerById(markerId);
+			if (marker) {
+				this.openMarkerPopup(markerId);
+				this.options.onMarkerHover && this.options.onMarkerHover(marker, true);
+			}
+		}
 	},
 	hideMarkerPopup : function(e) {
-		var markerId = e.target.id;
-		markerId && this.closeMarkerPopup(markerId);
+		if (e.target.tagName == 'path') {
+			var markerId = e.target.id;
+			var marker = this.getLayerById(markerId);
+			if (marker) {
+				this.closeMarkerPopup(markerId);
+				this.options.onMarkerHover && this.options.onMarkerHover(marker, false);
+			}
+		}
 	},
 	openMarkerPopup : function(markerId) {
 		var marker = this.getLayerById(markerId);
-		if (!marker)
-			return;
 		var latlng = marker.getLatLng();
 		var rows = [];
 		for (var key in marker.data) {
