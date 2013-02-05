@@ -149,7 +149,8 @@
 				$('input.row:visible:checked:not(:disabled)').each(function(index, input) {
 					var markerID = input.value;
 					var marker = map.getLayerById(markerID);
-					if (marker.data.poiID) {
+					// just avoid error
+					if (marker && marker.data.poiID) {
 						poiIDs.push(marker.data.poiID);
 						markerIDs.push(markerID);
 					} else {
@@ -243,7 +244,20 @@
 			},
 			onMarkerHover : function(marker, hover) {
 				var trID = 'poi_' + marker.data.poiID;
-				var $tds = $('#' + trID)[hover ? 'addClass' : 'removeClass']('hover');
+				var $tr = $('#' + trID)[hover ? 'addClass' : 'removeClass']('hover');
+				if ($tr.length && hover) {
+					$tr.find('td').highlight();
+					var $tb = $tr.closest('table');
+					var tr0_top = $tb.find('tbody tr:first').offset().top;
+					var tr_top = $tr.offset().top;
+					$container = $tb.parent();
+					$container.animate({
+						scrollTop : tr_top - tr0_top - 2 * $tr.outerHeight()
+					}, {
+						duration : 'slow',
+						easing : 'swing'
+					});
+				}
 			},
 			removeMarkerRow : function(markerID) {
 				var marker = map.getLayerById(markerID);
