@@ -4,9 +4,7 @@
 		<table id="list-point" class="list-point table table-striped table-bordered table-hover table-condensed hide">
 			<thead>
 				<tr>
-					<th class="f-id">#</th><th>Location</th>
-					<th>sw_level_threshold</th><th>sw_flow_threshold</th><th>freqency</th>
-					<th>Description</th><th class="f-status">Status</th>
+					<th class="f-id">#</th>
 					<th class="f-chb">
 					<div class="btn-group dropup">
 						<button class="btn btn-mini">
@@ -15,7 +13,7 @@
 						<button class="btn btn-mini dropdown-toggle" data-toggle="dropdown">
 							<span class="caret"></span>
 						</button>
-						<ul class="dropdown-menu pull-right f-action">
+						<ul class="dropdown-menu f-action">
 							<li class="subscribe">
 								<a href="#">Subscribe</a>
 							</li>
@@ -30,16 +28,21 @@
 							</li>
 						</ul>
 					</div></th>
+					<th>Location</th><th>Description</th><th class="f-status">Status</th>
+					<th class="f-level">sw_level_threshold</th>
+					<th class="f-flow">sw_flow_threshold</th>
+					<th class="f-frequency">frequency</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr class="row tpl hide">
-					<td class="f-id"></td><td class="f-latlng"></td>
-					<td class="f-level"></td><td class="f-flow"></td><td class="f-frequency"></td>
-					<td class="f-poi-type"></td><td class="f-status"><span class="label"></span></td>
-					<td class="f-chb">
+					<td class="f-id"></td><td class="f-chb">
 					<input type="checkbox" value="" />
 					</td>
+					<td class="f-latlng"></td>
+					<td class="f-poi-type"></td>
+					<td class="f-status"><span class="label"></span></td>
+					<td class="f-level"></td><td class="f-flow"></td><td class="f-frequency"></td>
 				</tr>
 			</tbody>
 		</table>
@@ -450,8 +453,8 @@
 						$tb.parent().css('height', $tb.parent().height() + 'px')
 						$headtb = $tb.parent().parent().find('.fht-thead .fht-table');
 						$headtb.addClass('list-point table table-striped table-bordered table-hover table-condensed');
-						$th2 = $headtb.find('th.f-chb');
-						$th = $tb.find('th.f-chb');
+						$th2 = $headtb.find('th.f-frequency');
+						$th = $tb.find('th.f-frequency');
 						$th2.css('width', $th.outerWidth() - ($th2.outerWidth() - $th2.width()) + 'px');
 						$tb.css('margin-top', 0 - $th.outerHeight() + 'px')
 						$tb[0]._fixed = true;
