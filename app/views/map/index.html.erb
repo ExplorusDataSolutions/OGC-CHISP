@@ -430,6 +430,7 @@
 			},
 			updateButtonStatus : function() {
 				var $checkedRows = $('input.row:checked').closest('tr');
+				$('.f-chb button').attr('disabled', $checkedRows.length == 0);
 				var rowsToSubscribe = $checkedRows.find('.selected, .pending').length;
 				$('.f-action .subscribe')[rowsToSubscribe == 0 ? 'addClass' : 'removeClass']('disabled');
 				var rowsToUpdate = $checkedRows.find('.active').length;
