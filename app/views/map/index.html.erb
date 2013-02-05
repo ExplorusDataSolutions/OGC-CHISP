@@ -9,29 +9,24 @@
 					<th>Description</th><th class="f-status">Status</th>
 					<th class="f-chb">
 					<div class="btn-group">
+						<button class="btn btn-mini">
+							Actions
+						</button>
 						<button class="btn btn-mini dropdown-toggle" data-toggle="dropdown">
-							Actions <span class="caret"></span>
+							<span class="caret"></span>
 						</button>
 						<ul class="dropdown-menu pull-right f-action">
-							<li>
-								<button class="btn btn-mini btn-success subscribe">
-									Subscribe
-								</button>
+							<li class="subscribe">
+								<a href="#">Subscribe</a>
 							</li>
-							<li>
-								<button class="btn btn-mini btn-danger cancel">
-									Cancel
-								</button>
+							<li class="cancel">
+								<a href="#">Cancel</a>
 							</li>
-							<li>
-								<button class="btn btn-mini btn-primary update">
-									Update
-								</button>
+							<li class="update">
+								<a href="#">Update</a>
 							</li>
-							<li>
-								<button class="btn btn-mini btn-warning unsubscribe">
-									Unsubscribe
-								</button>
+							<li class="unsubscribe">
+								<a href="#">Unsubscribe</a>
 							</li>
 						</ul>
 					</div></th>
@@ -107,7 +102,7 @@
 				return input.is(':hidden') && input.val();
 			},
 			tableMouseOverDelegate : function(e) {
-				var $el = $(e.target), $rows = $('input.row:checked').closest('tr');
+				var $el = $(e.target).parent(), $rows = $('input.row:checked').closest('tr');
 				if ($el.hasClass('subscribe')) {
 					$rows.find('.active, .invalid').closest('tr').find('.f-chb input').attr('disabled', true);
 				} else if ($el.hasClass('unsubscribe') || $el.hasClass('update')) {
@@ -117,7 +112,7 @@
 				}
 			},
 			tableMouseOutDelegate : function(e) {
-				var $el = $(e.target), $rows = $('input.row:checked').closest('tr');
+				var $el = $(e.target).parent(), $rows = $('input.row:checked').closest('tr');
 				if ($el.hasClass('subscribe')) {
 					$rows.find('.active, .invalid').closest('tr').find('.f-chb input').attr('disabled', false);
 				} else if ($el.hasClass('unsubscribe') || $el.hasClass('update')) {
@@ -418,12 +413,12 @@
 			updateButtonStatus : function() {
 				var $checkedRows = $('input.row:checked').closest('tr');
 				var rowsToSubscribe = $checkedRows.find('.selected, .pending').length;
-				$('.f-action .subscribe').attr('disabled', rowsToSubscribe == 0);
+				$('.f-action .subscribe')[rowsToSubscribe == 0 ? 'addClass' : 'removeClass']('disabled');
 				var rowsToUpdate = $checkedRows.find('.active').length;
-				$('.f-action .unsubscribe').attr('disabled', rowsToUpdate == 0);
-				$('.f-action .update').attr('disabled', rowsToUpdate == 0);
+				$('.f-action .unsubscribe')[rowsToUpdate == 0 ? 'addClass' : 'removeClass']('disabled');
+				$('.f-action .update')[rowsToUpdate == 0 ? 'addClass' : 'removeClass']('disabled');
 				var rowsToCancel = $checkedRows.find('.label:not(.active)').length;
-				$('.f-action .cancel').attr('disabled', rowsToCancel == 0);
+				$('.f-action .cancel')[rowsToCancel == 0 ? 'addClass' : 'removeClass']('disabled');
 			},
 			adjustMapHeight : function() {
 				var $tb = $('#list-point'), $wrapper = $('#list-wrapper');
@@ -431,17 +426,15 @@
 				var visibleRows = $tb.find('tbody tr:visible').length;
 				visibleRows == 0 && $tb.hide();
 				if (visibleRows >= 5) {
-					$wrapper.css('height', $wrapper.height() + 2 + 'px');
-					//$wrapper.css('overflow', 'hidden');
 					if (!$tb[0]._fixed) {
 						$tb.fixedHeaderTable();
-						$tb.parent().css('height', $tb.parent().height() + 4 + 'px')
+						$tb.parent().css('height', $tb.parent().height() + 'px')
 						$headtb = $tb.parent().parent().find('.fht-thead .fht-table');
 						$headtb.addClass('list-point table table-striped table-bordered table-hover table-condensed');
-						$th = $headtb.find('th.f-chb');
-						$td = $tb.find('td.f-chb');
-						$th.css('width', $td.outerWidth() - ($th.outerWidth() - $th.width()) + 'px');
-						$tb.css('margin-top', 3 - $td.outerHeight() + 'px')
+						$th2 = $headtb.find('th.f-chb');
+						$th = $tb.find('th.f-chb');
+						$th2.css('width', $th.outerWidth() - ($th2.outerWidth() - $th2.width()) + 'px');
+						$tb.css('margin-top', 0 - $th.outerHeight() + 'px')
 						$tb[0]._fixed = true;
 					}
 				} else {
