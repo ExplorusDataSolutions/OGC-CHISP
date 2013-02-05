@@ -8,7 +8,7 @@
 					<th>sw_level_threshold</th><th>sw_flow_threshold</th><th>freqency</th>
 					<th>Description</th><th class="f-status">Status</th>
 					<th class="f-chb">
-					<div class="btn-group">
+					<div class="btn-group dropup">
 						<button class="btn btn-mini">
 							Actions
 						</button>
@@ -122,19 +122,23 @@
 				}
 			},
 			tableClickDelegate : function(e) {
-				var el = e.target, $el = $(el);
-				if (el.tagName == 'TD' && el.className != 'f-action') {
+				var el = e.target, $el = $(el).parent();
+				if (el.tagName == 'TD') {
 					var $tr = $el.closest('tr');
 					var markerID = this.getMarkerIdByRow($tr);
 					var marker = map.getLayerById(markerID);
 					// Loading Soi marker here will be null
 					marker && map.openMarkerPopup(marker);
-				} else if ($el.hasClass('unsubscribe') || $el.hasClass('cancel')) {
-					this.cancelSubscribe(el);
-				} else if ($el.hasClass('subscribe') || $el.hasClass('update')) {
-					this.showSubscribeModal(el);
 				} else if (el.tagName == 'INPUT') {
 					this.updateButtonStatus();
+				} else if ($el.hasClass('unsubscribe') || $el.hasClass('cancel')) {
+					this.cancelSubscribe(el);
+					$el.closest('.btn-group').removeClass('open');
+					return false;
+				} else if ($el.hasClass('subscribe') || $el.hasClass('update')) {
+					this.showSubscribeModal(el);
+					$el.closest('.btn-group').removeClass('open');
+					return false;
 				}
 			},
 			cancelSubscribe : function(target) {
@@ -142,7 +146,7 @@
 				var app = this;
 
 				var poiIDs = [], markerIDs = [];
-				$('input.row:visible:checked').each(function(index, input) {
+				$('input.row:visible:checked:not(:disabled)').each(function(index, input) {
 					var markerID = input.value;
 					var marker = map.getLayerById(markerID);
 					if (marker.data.poiID) {
