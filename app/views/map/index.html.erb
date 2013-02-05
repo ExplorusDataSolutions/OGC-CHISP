@@ -527,7 +527,7 @@
 		}).addTo(map), "Stream Segments");
 
 		// layer Point Of Interest
-		layersControl.addOverlay(new MarkerGroup({
+		new MarkerGroup({
 			style : {
 				color : '#0266C8', // for svg marker and cluster marker
 			},
@@ -631,7 +631,7 @@
 			showMessage : function(msg, status) {
 				app.alert('Point Of Interest :<br />' + msg, status);
 			},
-		}).addTo(map), "Point Of Interest");
+		}).addTo(map);
 
 		// layer USGS Surface Water Stations
 		layersControl.addOverlay(new MarkerClusterGroup({
