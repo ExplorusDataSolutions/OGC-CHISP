@@ -161,7 +161,7 @@
 					}
 				});
 				if (poiIDs.length == 0) {
-					return app.alert('No points selected', 'warning');
+					return;
 				}
 
 				$.ajax({
@@ -200,7 +200,7 @@
 				if (email == '') {
 					email = $('#inputEmail').val();
 					if (email) {
-						app.loginEmail(email);
+						$.app.loginEmail(email);
 						// login the email in the meantime
 						$.get('/login.json', {
 							email : email,
@@ -344,10 +344,6 @@
 				$tr.find('.f-chb input').val(markerID);
 			},
 			showNewPoiRow : function(marker) {
-				if (!app.loginedEmail()) {
-					return;
-				}
-
 				var markerID = L.Util.stamp(marker), latlng = marker.getLatLng();
 				var data = marker.data, trID = 'marker_' + markerID;
 				var $tr = this.findOrAddRow(trID);
@@ -386,10 +382,6 @@
 				});
 			},
 			showNewSoiRow : function(marker) {
-				if (!app.loginedEmail()) {
-					return;
-				}
-
 				var markerID = L.Util.stamp(marker), latlng = marker.getLatLng();
 				var data = marker.data, trID = 'marker_' + markerID;
 				var $tr = this.findOrAddRow(trID);
