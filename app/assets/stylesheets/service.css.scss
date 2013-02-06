@@ -124,14 +124,6 @@
   }   
 }
 
-.f-action {
-  margin: 3px 5px;
-  text-align: right;
-  .btn[disabled] {
-    opacity: 0.3;
-  }
-}
-
 .alert-container {
   position: absolute;
   width: 40%;
@@ -141,20 +133,5 @@
   
   .alert {
     margin-bottom: 3px;
-  }
-}
-
-
-.form-horizontal {
-  .control-label {
-    float: left;
-    width: 200px;
-  }
-  
-  .controls {
-    margin-left: 220px;
-    input {
-      width: 280px;
-    }
   }
 }
