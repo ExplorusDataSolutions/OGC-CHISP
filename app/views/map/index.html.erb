@@ -32,6 +32,7 @@
 					<th class="f-level">Level Threshold</th>
 					<th class="f-flow">Flow Threshold</th>
 					<th class="f-frequency">Frequency</th>
+					<th class="f-show">Show</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -43,6 +44,7 @@
 					<td class="f-poi-type"></td>
 					<td class="f-status"><span class="label"></span></td>
 					<td class="f-level"></td><td class="f-flow"></td><td class="f-frequency"></td>
+					<td class="f-show"><a class="btn btn-mini"> <i class="icon-eye-open"></i> </a></td>
 				</tr>
 			</tbody>
 		</table>
@@ -135,7 +137,7 @@
 			},
 			tableClickDelegate : function(e) {
 				var el = e.target, $el = $(el).parent();
-				if (el.tagName == 'TD') {
+				if ($el.closest('td').hasClass('f-show')) {
 					var $tr = $el.closest('tr');
 					var markerID = this.getMarkerIdByRow($tr);
 					var marker = map.getLayerById(markerID);
