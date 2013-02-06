@@ -459,7 +459,9 @@
 				visibleRows == 0 && $tb.hide();
 				if (visibleRows >= 5) {
 					if (!$tb[0]._fixed) {
-						$tb.fixedHeaderTable();
+						$tb.fixedHeaderTable({
+							fixedColumn : true
+						});
 						$tb.parent().css('height', $tb.parent().height() + 'px')
 						$headtb = $tb.parent().parent().find('.fht-thead .fht-table');
 						$headtb.addClass('list-point table table-striped table-bordered table-hover table-condensed');
