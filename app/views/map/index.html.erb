@@ -53,7 +53,7 @@
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
 			&times;
 		</button>
-		<h3>Fill your data</h3>
+		<h3>Subscription</h3>
 	</div>
 	<div class="modal-body">
 		<form class="form-horizontal">
@@ -147,8 +147,12 @@
 					this.cancelSubscribe(el);
 					$el.closest('.btn-group').removeClass('open');
 					return false;
-				} else if ($el.hasClass('subscribe') || $el.hasClass('update')) {
-					this.showSubscribeModal(el);
+				} else if ($el.hasClass('subscribe')) {
+					this.showSubscribeModal('New Subscription');
+					$el.closest('.btn-group').removeClass('open');
+					return false;
+				} else if ($el.hasClass('update')) {
+					this.showSubscribeModal('Update Subscription');
 					$el.closest('.btn-group').removeClass('open');
 					return false;
 				}
@@ -198,8 +202,9 @@
 					},
 				});
 			},
-			showSubscribeModal : function(el) {
+			showSubscribeModal : function(title) {
 				$('#inputEmail').closest('.control-group')[this.loginedEmail() ? 'hide' : 'show']();
+				$('.modal .modal-header h3').html(title);
 				$('.modal').modal('show');
 				this.$selectedInputs = $('input.row:visible:checked:not(:disabled)');
 			},
