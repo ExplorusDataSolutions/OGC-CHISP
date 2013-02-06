@@ -442,6 +442,10 @@
 				$('.f-action .update')[rowsToUpdate == 0 ? 'addClass' : 'removeClass']('disabled');
 				var rowsToCancel = $checkedRows.find('.label:not(.active)').length;
 				$('.f-action .cancel')[rowsToCancel == 0 ? 'addClass' : 'removeClass']('disabled');
+
+				var cls = $('input.row:checked:first').closest('tr').find('.f-status .label').attr('class');
+				$('input.row').closest('tr').find('.f-status .label[class!="' + cls + '"]').closest('tr')//
+				.find('input.row').attr('disabled', !!cls);
 			},
 			adjustMapHeight : function() {
 				var $tb = $('#list-point'), $wrapper = $('#list-wrapper');
