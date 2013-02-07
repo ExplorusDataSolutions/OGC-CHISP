@@ -96,6 +96,13 @@
   td.f-id {
     text-align: center;
   }
+  th.f-show {
+    width: 30px;
+  }
+  td.f-show {
+    text-align: center;
+    cursor: pointer;
+  }
   th.f-latlng {
     width: 200px;
   }
