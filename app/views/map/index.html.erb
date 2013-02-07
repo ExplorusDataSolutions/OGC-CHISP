@@ -60,6 +60,17 @@
 	<div class="modal-body">
 		<form class="form-horizontal">
 			<div class="control-group">
+				<label class="control-label" for="inputEmail">Units</label>
+				<div class="controls">
+					<label class="radio inline">
+						<input type="radio" name="unit" class="US" value="imperial" checked>
+						Imperial</label>
+					<label class="radio inline">
+						<input type="radio" name="unit" class="CA" value="metric">
+						Metric</label>
+				</div>
+			</div>
+			<div class="control-group">
 				<label class="control-label" for="inputEmail">Email</label>
 				<div class="controls">
 					<input type="email" id="inputEmail" placeholder="your@email.com">
@@ -70,7 +81,7 @@
 				<div class="controls">
 					<div class="input-append">
 						<input type="number" id="sw_level_threshold" placeholder="">
-						<span class="add-on">m</span>
+						<span class="add-on unit">imperial</span>
 					</div>
 				</div>
 			</div>
@@ -79,7 +90,7 @@
 				<div class="controls">
 					<div class="input-append">
 						<input type="number" id="sw_flow_threshold" placeholder="">
-						<span class="add-on">m</span>
+						<span class="add-on unit">imperial</span>
 					</div>
 				</div>
 			</div>
@@ -111,6 +122,7 @@
 				"click #list-container" : "tableClickDelegate",
 				"click .modal .btn-primary" : "doSubscribe",
 				"keydown" : "keydownHandler",
+				"click .modal input[name=unit]" : "swapUnit",
 			},
 			keydownHandler : function(e) {
 				if (e.altKey) {
@@ -140,6 +152,9 @@
 						default:
 					}
 				}
+			},
+			swapUnit : function(e) {
+				$('.modal .unit').html(e.target.value);
 			},
 			loginedEmail : function() {
 				var input = $('.navbar input[name=email]');
@@ -236,6 +251,22 @@
 				$('.modal .modal-header h3').html(title);
 				$('.modal').modal('show');
 				this.$selectedInputs = $('input.row:visible:checked:not(:disabled)');
+
+				$('.modal input[name=unit]').attr('disabled', false);
+				this.$selectedInputs.each(function(index, input) {
+					var markerID = input.value;
+					var marker = map.getLayerById(markerID);
+					var layerName = marker.stationLayer ? marker.stationLayer.options.layerName : '';
+					if (layerName == 'EC Surface Water') {
+						$('.modal input[name=unit]').attr('disabled', true);
+						$('.modal .unit').html($('.modal input.CA').attr('checked', true).val());
+						return false;
+					} else if (layerName == 'USGS Surface Water') {
+						$('.modal input[name=unit]').attr('disabled', true);
+						$('.modal .unit').html($('.modal input.US').attr('checked', true).val());
+						return false;
+					}
+				})
 			},
 			$selectedInputs : null,
 			doSubscribe : function() {
@@ -536,12 +567,14 @@
 				}
 			},
 			showStationMarkers : function(markerClusterLayer, stationData, markerLayer) {
-				var latlng, style = markerLayer.options.style;
+				var latlng, _marker, style = markerLayer.options.style;
 				for (var i = 0, row; row = stationData[i++]; ) {
 					markerClusterLayer.eachLayer(function(marker) {
 						if (marker.data.id == row.stationID) {
 							latlng = marker.getLatLng();
-							app.updateSoiRow(new CircleMarker(latlng, row, style).addTo(markerLayer));
+							_marker = new CircleMarker(latlng, row, style);
+							_marker.stationLayer = markerClusterLayer;
+							app.updateSoiRow(_marker.addTo(markerLayer));
 						}
 					});
 				}
@@ -696,6 +729,7 @@
 			},
 			url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
 			bounds : bounds,
+			layerName : 'USGS Surface Water',
 			elementTag : 'member',
 			positionTag : 'pos',
 			data : function(element) {
@@ -714,7 +748,7 @@
 				return data;
 			},
 			onLoad : app.syncMarkers,
-		}).addTo(map), "USGS Surface Water");
+		}).addTo(map));
 
 		// layer EC Surface Water Stations
 		layersControl.addOverlay(new MarkerClusterGroup({
@@ -729,7 +763,7 @@
 			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 			.join(''),
 			bounds : bounds,
-			type : 'EC Surface Water',
+			layerName : 'EC Surface Water',
 			elementTag : 'featureMember',
 			positionTag : 'pos',
 			data : function(element) {
@@ -740,6 +774,6 @@
 				};
 			},
 			onLoad : app.syncMarkers,
-		}).addTo(map), "EC Surface Water");
+		}).addTo(map));
 	}); 
 </script>

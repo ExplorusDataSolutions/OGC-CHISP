@@ -2,6 +2,11 @@
  * Customized Layers Control
  */
 LayersControl = L.Control.Layers.extend({
+	addOverlay: function (layer, name) {
+		name = name || layer.options.layerName;
+		L.Control.Layers.prototype.addOverlay.call(this, layer, name);
+	},
+	
 	_initLayout : function() {
 		L.Control.Layers.prototype._initLayout.apply(this, arguments);
 
