@@ -21,9 +21,6 @@
 							<li<%=raw ' class="active"' if params[:controller] == "map"%>>
 								<a href="/map">Map</a>
 							</li>
-							<li<%=raw ' class="active"' if params[:controller] == "csw"%>>
-								<a href="/svc/csw">Catalog</a>
-							</li>
 							<li<%=raw logined_email.nil? ? ' class="hide"' : '' %>>
 								<label class="label"><%= logined_email%></label>
 								<button type="submit" class="btn btn-logout">
