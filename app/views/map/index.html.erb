@@ -15,16 +15,16 @@
 						</button>
 						<ul class="dropdown-menu f-action">
 							<li class="subscribe">
-								<a href="#">Subscribe</a>
+								<a href="#"><b>S</b>ubscribe</a>
 							</li>
 							<li class="cancel">
-								<a href="#">Cancel</a>
+								<a href="#"><b>C</b>ancel</a>
 							</li>
 							<li class="update">
-								<a href="#">Update</a>
+								<a href="#">Upd<b>a</b>te</a>
 							</li>
 							<li class="unsubscribe">
-								<a href="#">Unsubscribe</a>
+								<a href="#"><b>U</b>nsubscribe</a>
 							</li>
 						</ul>
 					</div></th>
@@ -110,6 +110,36 @@
 				"mouseout #list-container" : "tableMouseOutDelegate",
 				"click #list-container" : "tableClickDelegate",
 				"click .modal .btn-primary" : "doSubscribe",
+				"keydown" : "keydownHandler",
+			},
+			keydownHandler : function(e) {
+				if (e.altKey) {
+					var actionsEnabled = !$('th.f-chb .dropdown-toggle').attr('disabled');
+					var $ul = $('th.f-chb ul');
+					switch(String.fromCharCode(e.keyCode)) {
+						case 'S':
+							if (actionsEnabled && $ul.find('.subscribe:not(.disabled)').length) {
+								this.showSubscribeModal('New Subscription');
+							}
+							break;
+						case 'A':
+							if (actionsEnabled && $ul.find('.update:not(.disabled)').length) {
+								actionsEnabled && this.showSubscribeModal('Update Subscription');
+							}
+							break;
+						case 'C':
+							if (actionsEnabled && $ul.find('.cancel:not(.disabled)').length) {
+								actionsEnabled && this.cancelSubscribe();
+							}
+							break;
+						case 'U':
+							if (actionsEnabled && $ul.find('.unsubscribe:not(.disabled)').length) {
+								actionsEnabled && this.cancelSubscribe();
+							}
+							break;
+						default:
+					}
+				}
 			},
 			loginedEmail : function() {
 				var input = $('.navbar input[name=email]');
@@ -159,10 +189,7 @@
 					return false;
 				}
 			},
-			cancelSubscribe : function(target) {
-				var $tb = $(target).closest('table');
-				var app = this;
-
+			cancelSubscribe : function() {
 				var poiIDs = [], markerIDs = [];
 				$('input.row:visible:checked:not(:disabled)').each(function(index, input) {
 					var markerID = input.value;
