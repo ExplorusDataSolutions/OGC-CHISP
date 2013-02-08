@@ -80,7 +80,7 @@
 				<label class="control-label" for="sw_level_threshold">Surface Water Level Threshold</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="number" id="sw_level_threshold" placeholder="">
+						<input type="text" id="sw_level_threshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" placeholder="">
 						<span class="add-on unit">imperial</span>
 					</div>
 				</div>
@@ -89,7 +89,7 @@
 				<label class="control-label" for="sw_flow_threshold">Surface Flow Level Threshold</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="number" id="sw_flow_threshold" placeholder="">
+						<input type="text" id="sw_flow_threshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" placeholder="">
 						<span class="add-on unit">imperial</span>
 					</div>
 				</div>
@@ -98,7 +98,7 @@
 				<label class="control-label" for="frequency">Frequency</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="number" id="frequency" placeholder="">
+						<input type="number" id="frequency" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" placeholder="">
 						<span class="add-on">minute</span>
 					</div>
 				</div>
