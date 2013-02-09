@@ -80,27 +80,30 @@
 				<label class="control-label" for="sw_level_threshold">Surface Water Level Threshold</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="text" id="sw_level_threshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" placeholder="">
-						<span class="add-on unit">imperial</span>
+						<input type="text" id="sw_level_threshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="">
+						<span class="add-on unit"></span>
 					</div>
+					<span class="help-inline"></span>
 				</div>
 			</div>
 			<div class="control-group">
 				<label class="control-label" for="sw_flow_threshold">Surface Flow Level Threshold</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="text" id="sw_flow_threshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" placeholder="">
-						<span class="add-on unit">imperial</span>
+						<input type="text" id="sw_flow_threshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="">
+						<span class="add-on unit"></span>
 					</div>
+					<span class="help-inline"></span>
 				</div>
 			</div>
 			<div class="control-group">
 				<label class="control-label" for="frequency">Frequency</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="text" id="frequency" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" placeholder="">
+						<input type="text" id="frequency" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="">
 						<span class="add-on">minute</span>
 					</div>
+					<span class="help-inline"></span>
 				</div>
 			</div>
 		</form>
@@ -154,7 +157,22 @@
 				}
 			},
 			swapUnit : function(e) {
-				$('.modal .unit').html(e.target.value);
+				var cls = e.target.className;
+				if (cls == 'CA') {
+					this.setCAUnit();
+				} else if (cls == 'US') {
+					this.setUSUnit();
+				}
+			},
+			setCAUnit : function() {
+				$('.modal input.CA').attr('checked', true);
+				$('#sw_level_threshold + .unit').html('m');
+				$('#sw_flow_threshold + .unit').html('m<sup>3</sup>/day');
+			},
+			setUSUnit : function() {
+				$('.modal input.US').attr('checked', true);
+				$('#sw_level_threshold + .unit').html('ft');
+				$('#sw_flow_threshold + .unit').html('ft<sup>3</sup>/second');
 			},
 			loginedEmail : function() {
 				var input = $('.navbar input[name=email]');
@@ -249,24 +267,29 @@
 			showSubscribeModal : function(title) {
 				$('#inputEmail').closest('.control-group')[this.loginedEmail() ? 'hide' : 'show']();
 				$('.modal .modal-header h3').html(title);
-				$('.modal').modal('show');
-				this.$selectedInputs = $('input.row:visible:checked:not(:disabled)');
-
 				$('.modal input[name=unit]').attr('disabled', false);
+
+				var defaultUnit = false;
+				this.$selectedInputs = $('input.row:visible:checked:not(:disabled)');
 				this.$selectedInputs.each(function(index, input) {
 					var markerID = input.value;
 					var marker = map.getLayerById(markerID);
 					var layerName = marker.stationLayer ? marker.stationLayer.options.layerName : '';
 					if (layerName == 'EC Surface Water') {
 						$('.modal input[name=unit]').attr('disabled', true);
-						$('.modal .unit').html($('.modal input.CA').attr('checked', true).val());
+						app.setCAUnit();
+						defaultUnit = true;
 						return false;
 					} else if (layerName == 'USGS Surface Water') {
 						$('.modal input[name=unit]').attr('disabled', true);
-						$('.modal .unit').html($('.modal input.US').attr('checked', true).val());
+						app.setUSUnit();
+						defaultUnit = true;
 						return false;
 					}
-				})
+				});
+
+				defaultUnit == false && app.setUSUnit();
+				$('.modal').modal('show');
 			},
 			$selectedInputs : null,
 			doSubscribe : function() {
@@ -282,6 +305,18 @@
 					} else {
 						return app.alert('Please leave your email', 'warning');
 					}
+				}
+
+				$('#sw_level_threshold, #sw_flow_threshold, #frequency').each(function(index, input) {
+					var g = $(input).closest('.control-group');
+					if (!(new RegExp(input.pattern)).test(input.value)) {
+						g.addClass('error').find('.help-inline').html(input.value ? '*Invalid number format' : '*required');
+					} else {
+						g.removeClass('error').find('.help-inline').html('');
+					}
+				});
+				if ($('.modal .error').length) {
+					return;
 				}
 				var data = [], markerIDs = [];
 				this.$selectedInputs.each(function(index, input) {
