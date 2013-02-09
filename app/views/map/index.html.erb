@@ -15,16 +15,16 @@
 						</button>
 						<ul class="dropdown-menu f-action">
 							<li class="subscribe">
-								<a href="#"><b>S</b>ubscribe</a>
+								<a href="#"><b>S</b>ubscribe (Alt+S)</a>
 							</li>
 							<li class="cancel">
-								<a href="#"><b>C</b>ancel</a>
+								<a href="#"><b>C</b>ancel (Alt+C)</a>
 							</li>
 							<li class="update">
-								<a href="#">Upd<b>a</b>te</a>
+								<a href="#">Upd<b>a</b>te (Alt+A)</a>
 							</li>
 							<li class="unsubscribe">
-								<a href="#"><b>U</b>nsubscribe</a>
+								<a href="#"><b>U</b>nsubscribe (Alt+U)</a>
 							</li>
 						</ul>
 					</div></th>
@@ -73,24 +73,25 @@
 			<div class="control-group">
 				<label class="control-label" for="inputEmail">Email</label>
 				<div class="controls">
-					<input type="email" id="inputEmail" placeholder="your@email.com">
+					<input type="email" class="span2" id="inputEmail" placeholder="your@email.com" required="required">
+					<span class="help-inline"></span>
 				</div>
 			</div>
 			<div class="control-group">
-				<label class="control-label" for="sw_level_threshold">Surface Water Level Threshold</label>
+				<label class="control-label" for="levelThreshold">Surface Water Level Threshold</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="text" id="sw_level_threshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="">
+						<input type="text" class="span2" id="levelThreshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="required">
 						<span class="add-on unit"></span>
 					</div>
 					<span class="help-inline"></span>
 				</div>
 			</div>
 			<div class="control-group">
-				<label class="control-label" for="sw_flow_threshold">Surface Flow Level Threshold</label>
+				<label class="control-label" for="flowThreshold">Surface Flow Level Threshold</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="text" id="sw_flow_threshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="">
+						<input type="text" class="span2" id="flowThreshold" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="required">
 						<span class="add-on unit"></span>
 					</div>
 					<span class="help-inline"></span>
@@ -100,7 +101,7 @@
 				<label class="control-label" for="frequency">Frequency</label>
 				<div class="controls">
 					<div class="input-append">
-						<input type="text" id="frequency" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="">
+						<input type="text" class="span2" id="frequency" pattern="^[-]?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$" required="required">
 						<span class="add-on">minute</span>
 					</div>
 					<span class="help-inline"></span>
@@ -124,6 +125,7 @@
 				"mouseout #list-container" : "tableMouseOutDelegate",
 				"click #list-container" : "tableClickDelegate",
 				"click .modal .btn-primary" : "doSubscribe",
+				"blur .modal input[required]" : "validateInputs",
 				"keydown" : "keydownHandler",
 				"click .modal input[name=unit]" : "swapUnit",
 			},
@@ -166,13 +168,13 @@
 			},
 			setCAUnit : function() {
 				$('.modal input.CA').attr('checked', true);
-				$('#sw_level_threshold + .unit').html('m');
-				$('#sw_flow_threshold + .unit').html('m<sup>3</sup>/day');
+				$('#levelThreshold + .unit').html('m');
+				$('#flowThreshold + .unit').html('m<sup>3</sup>/day');
 			},
 			setUSUnit : function() {
 				$('.modal input.US').attr('checked', true);
-				$('#sw_level_threshold + .unit').html('ft');
-				$('#sw_flow_threshold + .unit').html('ft<sup>3</sup>/second');
+				$('#levelThreshold + .unit').html('ft');
+				$('#flowThreshold + .unit').html('ft<sup>3</sup>/second');
 			},
 			loginedEmail : function() {
 				var input = $('.navbar input[name=email]');
@@ -265,6 +267,8 @@
 				});
 			},
 			showSubscribeModal : function(title) {
+				$('.modal .control-group').removeClass('error');
+
 				$('#inputEmail').closest('.control-group')[this.loginedEmail() ? 'hide' : 'show']();
 				$('.modal .modal-header h3').html(title);
 				$('.modal input[name=unit]').attr('disabled', false);
@@ -291,34 +295,30 @@
 				defaultUnit == false && app.setUSUnit();
 				$('.modal').modal('show');
 			},
-			$selectedInputs : null,
-			doSubscribe : function() {
+			validateInputs : function(e) {
 				var email = this.loginedEmail();
-				if (email == '') {
-					email = $('#inputEmail').val();
-					if (email) {
-						$.app.loginEmail(email);
-						// login the email in the meantime
-						$.get('/login.json', {
-							email : email,
-						});
-					} else {
-						return app.alert('Please leave your email', 'warning');
+				var inputs = e ? e.target : '#inputEmail, #levelThreshold, #flowThreshold, #frequency';
+				$(inputs).each(function(index, input) {
+					if (input.id == 'inputEmail' && email != '') {
+						return true;
 					}
-				}
-
-				$('#sw_level_threshold, #sw_flow_threshold, #frequency').each(function(index, input) {
-					var g = $(input).closest('.control-group');
-					if (!(new RegExp(input.pattern)).test(input.value)) {
-						g.addClass('error').find('.help-inline').html(input.value ? '*Invalid number format' : '*required');
+					var $input = $(input), g = $input.closest('.control-group');
+					if ($input.is(':invalid')) {
+						g.addClass('error').find('.help-inline').html($input.val() ? '*Invalid' : '*Required');
 					} else {
 						g.removeClass('error').find('.help-inline').html('');
 					}
 				});
-				if ($('.modal .error').length) {
+
+				return $('.modal input:invalid').length == 0;
+			},
+			$selectedInputs : null,
+			doSubscribe : function() {
+				if (!this.validateInputs()) {
 					return;
 				}
-				var data = [], markerIDs = [];
+
+				var data = [], markerIDs = [], email = this.loginedEmail() || $('#inputEmail').val();
 				this.$selectedInputs.each(function(index, input) {
 					var markerID = input.value;
 					var marker = map.getLayerById(markerID);
@@ -327,8 +327,8 @@
 						var latlng = marker.getLatLng();
 						values = {
 							email : email,
-							sw_level_threshold : $('#sw_level_threshold').val(),
-							sw_flow_threshold : $('#sw_flow_threshold').val(),
+							sw_level_threshold : $('#levelThreshold').val(),
+							sw_flow_threshold : $('#flowThreshold').val(),
 							frequency : $('#frequency').val(),
 							poiType : 'P',
 							lat : latlng.lat.toFixed(8),
@@ -337,8 +337,8 @@
 					} else if (marker.data.poiType == 'S') {
 						values = {
 							email : email,
-							sw_level_threshold : $('#sw_level_threshold').val(),
-							sw_flow_threshold : $('#sw_flow_threshold').val(),
+							sw_level_threshold : $('#levelThreshold').val(),
+							sw_flow_threshold : $('#flowThreshold').val(),
 							frequency : $('#frequency').val(),
 							poiType : 'S',
 							stationID : marker.data.stationID,
@@ -352,7 +352,17 @@
 					return app.alert('No points selected', 'warning');
 				}
 
-				this.trigger('subscribe', data, markerIDs);
+				this.trigger('subscribe', data, markerIDs, function() {
+					var layer = this;
+					$.get('/login.json', {
+						email : email,
+					}, function(a, b, c, d) {
+						layer.clearLayers();
+						$('#list-point').find('tbody tr:visible').remove();
+						$.app.loginEmail(email);
+						$.app.trigger('login', email);
+					});
+				});
 			},
 			onMarkerHover : function(marker, hover) {
 				var trID = 'poi_' + marker.data.poiID;
@@ -711,7 +721,7 @@
 			},
 			onLoad : app.syncMarkers,
 			onSubscribe : function() {
-				app.on('subscribe', function(data, markerIDs) {
+				app.on('subscribe', function(data, markerIDs, callback) {
 					$.ajax({
 						url : '/proxy',
 						type : 'post',
@@ -736,6 +746,8 @@
 									poiIDs.push(row.poiID);
 								}
 								app.alert('Subscribe ' + poiIDs.join(',') + ' success', 'success');
+
+								$.isFunction(callback) && callback.call(this);
 							}
 						},
 						error : function(xhr, status, e) {
