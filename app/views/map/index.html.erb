@@ -310,7 +310,7 @@
 					}
 				});
 
-				return $('.modal input:invalid').length == 0;
+				return $('.modal input:invalid').filter(':visible').length == 0;
 			},
 			$selectedInputs : null,
 			doSubscribe : function() {
@@ -353,15 +353,17 @@
 				}
 
 				this.trigger('subscribe', data, markerIDs, function() {
-					var layer = this;
-					$.get('/login.json', {
-						email : email,
-					}, function(a, b, c, d) {
-						layer.clearLayers();
-						$('#list-point').find('tbody tr:visible').remove();
-						$.app.loginEmail(email);
-						$.app.trigger('login', email);
-					});
+					if (!app.loginedEmail()) {
+						var layer = this;
+						$.get('/login.json', {
+							email : email,
+						}, function() {
+							layer.clearLayers();
+							$('#list-point').find('tbody tr:visible').remove();
+							$.app.loginEmail(email);
+							$.app.trigger('login', email);
+						});
+					}
 				});
 			},
 			onMarkerHover : function(marker, hover) {
