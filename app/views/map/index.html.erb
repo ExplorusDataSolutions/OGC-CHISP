@@ -166,15 +166,23 @@
 					this.setUSUnit();
 				}
 			},
+			CAUnitLevel : 'm',
+			CAUnitLevelDesc : 'Meters',
+			CAUnitFlow : 'm<sup>3</sup>/day',
+			CAUnitFlowDesc : 'CubicMetersPerDay',
 			setCAUnit : function() {
 				$('.modal input.CA').attr('checked', true);
-				$('#levelThreshold + .unit').html('m');
-				$('#flowThreshold + .unit').html('m<sup>3</sup>/day');
+				$('#levelThreshold + .unit').html(this.CAUnitLevel);
+				$('#flowThreshold + .unit').html(this.CAUnitFlow);
 			},
+			USUnitLevel : 'ft',
+			USUnitLevelDesc : 'Feet',
+			USUnitFlow : 'ft<sup>3</sup>/sec',
+			USUnitFlowDesc : 'CubicFeetPerSecond',
 			setUSUnit : function() {
 				$('.modal input.US').attr('checked', true);
-				$('#levelThreshold + .unit').html('ft');
-				$('#flowThreshold + .unit').html('ft<sup>3</sup>/sec');
+				$('#levelThreshold + .unit').html(this.USUnitLevel);
+				$('#flowThreshold + .unit').html(this.USUnitFlow);
 			},
 			loginedEmail : function() {
 				var input = $('.navbar input[name=email]');
@@ -278,6 +286,10 @@
 				this.$selectedInputs.each(function(index, input) {
 					var markerID = input.value;
 					var marker = map.getLayerById(markerID);
+					if (!marker) {
+						// Loading... rows have no marker yet
+						return true;
+					}
 					var layerName = marker.stationLayer ? marker.stationLayer.options.layerName : '';
 					if (layerName == 'EC Surface Water') {
 						$('.modal input[name=unit]').attr('disabled', true);
@@ -319,30 +331,32 @@
 				}
 
 				var data = [], markerIDs = [], email = this.loginedEmail() || $('#inputEmail').val();
+				var swLevelThreshold = $('#levelThreshold').val();
+				var unit = $('#levelThreshold + .unit').html();
+				var swLevelThresholdUnit = unit == this.CAUnitLevel ? this.CAUnitLevelDesc : unit == this.USUnitLevel ? this.USUnitLevelDesc : '';
+				var swFlowThreshold = $('#flowThreshold').val();
+				var unit = $('#flowThreshold + .unit').html();
+				var swFlowThresholdUnit = unit == this.CAUnitFlow ? this.CAUnitFlowDesc : unit == this.USUnitFlow ? this.USUnitFlowDesc : '';
+				var frequency = $('#frequency').val();
 				this.$selectedInputs.each(function(index, input) {
 					var markerID = input.value;
 					var marker = map.getLayerById(markerID);
-					var values = {};
+					var values = {
+						email : email,
+						swLevelThreshold : swLevelThreshold,
+						swLevelThresholdUnit : swLevelThresholdUnit,
+						swFlowThreshold : swFlowThreshold,
+						swFlowThresholdUnit : swFlowThresholdUnit,
+						frequency : frequency,
+					};
 					if (marker.data.poiType == 'P') {
 						var latlng = marker.getLatLng();
-						values = {
-							email : email,
-							sw_level_threshold : $('#levelThreshold').val(),
-							sw_flow_threshold : $('#flowThreshold').val(),
-							frequency : $('#frequency').val(),
-							poiType : 'P',
-							lat : latlng.lat.toFixed(8),
-							lng : latlng.lng.toFixed(8),
-						};
+						values.poiType = 'P';
+						values.lat = latlng.lat.toFixed(8);
+						values.lng = latlng.lng.toFixed(8);
 					} else if (marker.data.poiType == 'S') {
-						values = {
-							email : email,
-							sw_level_threshold : $('#levelThreshold').val(),
-							sw_flow_threshold : $('#flowThreshold').val(),
-							frequency : $('#frequency').val(),
-							poiType : 'S',
-							stationID : marker.data.stationID,
-						};
+						values.poiType = 'S';
+						values.stationID = marker.data.stationID;
 					}
 					marker.data.poiID && (values.poiID = parseInt(marker.data.poiID));
 					data.push(values);
@@ -414,11 +428,9 @@
 
 				$tr.find('.f-id').html(poiID);
 				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8));
-				$tr.find('.f-level').html(data.sw_level_threshold);
-				$tr.find('.f-flow').html(data.sw_flow_threshold);
-				$tr.find('.f-frequency').html(data.frequency);
+				this.showRowData($tr, data);
 				$tr.find('.f-poi-type').html('Point Of Interest');
-				$tr.find('.f-chb input').val(markerID).attr('checked', $tr.find('.f-chb input').attr('checked') || !poiID);
+				$tr.find('.f-chb input').addClass('row').val(markerID).attr('checked', $tr.find('.f-chb input').attr('checked') || !poiID);
 				$tr.find('.f-status .label').html(this.statusText[data.status])//
 				.removeClass().addClass(this.statusClass[data.status]);
 
@@ -438,15 +450,14 @@
 
 				$tr.find('.f-id').html(poiID);
 				$tr.find('.f-latlng').html('Loading...');
-				$tr.find('.f-level').html(data.sw_level_threshold);
-				$tr.find('.f-flow').html(data.sw_flow_threshold);
-				$tr.find('.f-frequency').html(data.frequency);
+				this.showRowData($tr, data);
 				$tr.find('.f-poi-type').html('Station ID : ' + data.stationID);
 				$tr.find('.f-chb input').attr('checked', $tr.find('.f-chb input').attr('checked') || !poiID);
 				$tr.find('.f-status .label').html(this.statusText[data.status])//
 				.removeClass().addClass(this.statusClass[data.status]);
 
 				this.updateButtonStatus();
+				$tr.find('.f-chb input').attr('disabled', true);
 
 				$('#list-container').slideDown("fast", function() {
 					app.adjustMapHeight();
@@ -462,7 +473,7 @@
 
 				var $tr = $('#' + trID);
 				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8)).highlight();
-				$tr.find('.f-chb input').val(markerID);
+				$tr.find('.f-chb input').addClass('row').val(markerID).attr('disabled', false);
 			},
 			showNewPoiRow : function(marker) {
 				var markerID = L.Util.stamp(marker), latlng = marker.getLatLng();
@@ -473,7 +484,7 @@
 				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8));
 				$tr.find('.f-level, .f-flow, .f-frequency').html('');
 				$tr.find('.f-poi-type').html('Point Of Interest');
-				$tr.find('.f-chb input').val(markerID).attr('checked', true);
+				$tr.find('.f-chb input').addClass('row').val(markerID).attr('checked', true);
 				$tr.find('.f-status .label').html(this.statusText[data.status])//
 				.removeClass().addClass(this.statusClass[data.status]);
 
@@ -492,9 +503,7 @@
 				var $tr = this.findOrAddRow(trID);
 				$tr.attr('id', 'poi_' + poiID);
 				$tr.find('.f-id').html(poiID);
-				$tr.find('.f-level').html(data.sw_level_threshold);
-				$tr.find('.f-flow').html(data.sw_flow_threshold);
-				$tr.find('.f-frequency').html(data.frequency);
+				this.showRowData($tr, data);
 				$tr.find('.f-status .label').html(this.statusText[data.status])//
 				.removeClass().addClass(this.statusClass[data.status]);
 				$tr.find('td:not(.f-action)').highlight(function() {
@@ -511,7 +520,7 @@
 				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8));
 				$tr.find('.f-level, .f-flow, .f-frequency').html('');
 				$tr.find('.f-poi-type').html('Station ID : ' + data.stationID);
-				$tr.find('.f-chb input').val(markerID).attr('checked', true);
+				$tr.find('.f-chb input').addClass('row').val(markerID).attr('checked', true);
 				$tr.find('.f-status .label').html(this.statusText[data.status])//
 				.removeClass().addClass(this.statusClass[data.status]);
 
@@ -520,6 +529,23 @@
 				$('#list-container').slideDown("fast", function() {
 					app.adjustMapHeight();
 				});
+			},
+			showRowData : function($tr, data) {
+				$tr.find('.f-level').html(data.swLevelThreshold);
+				if (data.swLevelThresholdUnit == this.CAUnitLevelDesc) {
+					$tr.find('.f-level').html(data.swLevelThreshold + ' ' + this.CAUnitLevel);
+				} else if (data.swLevelThresholdUnit == this.USUnitLevelDesc) {
+					$tr.find('.f-level').html(data.swLevelThreshold + ' ' + this.USUnitLevel);
+				}
+
+				$tr.find('.f-flow').html(data.swFlowThreshold);
+				if (data.swFlowThresholdUnit == this.CAUnitFlowDesc) {
+					$tr.find('.f-flow').html(data.swFlowThreshold + ' ' + this.CAUnitFlow);
+				} else if (data.swFlowThresholdUnit == this.USUnitFlowDesc) {
+					$tr.find('.f-flow').html(data.swFlowThreshold + ' ' + this.USUnitFlow);
+				}
+
+				$tr.find('.f-frequency').html(data.frequency + ' minute' + (data.frequency > 1 ? 's' : ''));
 			},
 			statusClass : {
 				Selected : "label label-selected selected",
@@ -539,7 +565,6 @@
 					var tpl_html = $tb.find('tr.tpl').html();
 					$tb.find('tbody').prepend('<tr id="' + trID + '">' + tpl_html + '</tr>');
 					$tr = $('#' + trID);
-					$tr.find('.f-chb input').addClass('row');
 				}
 				$tr.find('td').highlight();
 				return $tr;
@@ -555,9 +580,18 @@
 				var rowsToCancel = $checkedRows.find('.label:not(.active)').length;
 				$('.f-action .cancel')[rowsToCancel == 0 ? 'addClass' : 'removeClass']('disabled');
 
-				var cls = $('input.row:checked:first').closest('tr').find('.f-status .label').attr('class');
+				var firstChecked = $('input.row:checked:first');
+				var cls = firstChecked.closest('tr').find('.f-status .label').attr('class');
+				var firstMarker = map.getLayerById(firstChecked.val());
 				$('input.row').closest('tr').find('.f-status .label[class!="' + cls + '"]').closest('tr')//
 				.find('input.row').attr('disabled', !!cls);
+				$('input.row').closest('tr').find('.f-status .label[class="' + cls + '"]').closest('tr')//
+				.find('input.row').each(function(index, input) {
+					var marker = map.getLayerById(input.value);
+					if (firstMarker && marker) {
+						input.disabled = marker.stationLayer != firstMarker.stationLayer;
+					}
+				});
 			},
 			adjustMapHeight : function() {
 				var $tb = $('#list-point'), $wrapper = $('#list-wrapper');
@@ -698,11 +732,13 @@
 						if (marker.groupLayer == this) {
 							app.showPoiRow(marker);
 						} else {
-							app.showNewSoiRow(new CircleMarker(marker.getLatLng(), {
+							var newMarker = new CircleMarker(marker.getLatLng(), {
 								poiType : 'S',
 								status : 'Selected',
 								stationID : marker.data.id,
-							}, style).addTo(layer));
+							}, style).addTo(layer);
+							newMarker.stationLayer = marker.groupLayer;
+							app.showNewSoiRow(newMarker);
 						}
 					}
 				}
