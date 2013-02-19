@@ -281,11 +281,10 @@
 				$('.modal .modal-header h3').html(title);
 				$('.modal input[name=unit]').attr('disabled', false);
 
-				var defaultUnit = false;
+				var marker = false;
 				this.$selectedInputs = $('input.row:visible:checked:not(:disabled)');
 				this.$selectedInputs.each(function(index, input) {
-					var markerID = input.value;
-					var marker = map.getLayerById(markerID);
+					marker = map.getLayerById(input.value);
 					if (!marker) {
 						// Loading... rows have no marker yet
 						return true;
@@ -294,17 +293,27 @@
 					if (layerName == 'EC Surface Water') {
 						$('.modal input[name=unit]').attr('disabled', true);
 						app.setCAUnit();
-						defaultUnit = true;
 						return false;
 					} else if (layerName == 'USGS Surface Water') {
 						$('.modal input[name=unit]').attr('disabled', true);
 						app.setUSUnit();
-						defaultUnit = true;
 						return false;
+					} else {
+						marker = false;
+						return true;
 					}
 				});
 
-				defaultUnit == false && app.setUSUnit();
+				if (marker) {
+					$('#levelThreshold').val(marker.data.swLevelThreshold);
+					$('#flowThreshold').val(marker.data.swFlowThreshold);
+					$('#frequency').val(marker.data.frequency);
+				} else {
+					app.setUSUnit();
+					$('#levelThreshold').val('');
+					$('#flowThreshold').val('');
+					$('#frequency').val('');
+				}
 				$('.modal').modal('show');
 			},
 			validateInputs : function(e) {
@@ -456,8 +465,8 @@
 				$tr.find('.f-status .label').html(this.statusText[data.status])//
 				.removeClass().addClass(this.statusClass[data.status]);
 
-				this.updateButtonStatus();
 				$tr.find('.f-chb input').attr('disabled', true);
+				this.updateButtonStatus();
 
 				$('#list-container').slideDown("fast", function() {
 					app.adjustMapHeight();
@@ -474,6 +483,8 @@
 				var $tr = $('#' + trID);
 				$tr.find('.f-latlng').html(latlng.lat.toFixed(8) + ', ' + latlng.lng.toFixed(8)).highlight();
 				$tr.find('.f-chb input').addClass('row').val(markerID).attr('disabled', false);
+
+				this.updateButtonStatus();
 			},
 			showNewPoiRow : function(marker) {
 				var markerID = L.Util.stamp(marker), latlng = marker.getLatLng();
@@ -588,7 +599,7 @@
 				$('input.row').closest('tr').find('.f-status .label[class="' + cls + '"]').closest('tr')//
 				.find('input.row').each(function(index, input) {
 					var marker = map.getLayerById(input.value);
-					if (firstMarker && marker) {
+					if (firstMarker && marker && firstMarker !== marker) {
 						input.disabled = marker.stationLayer != firstMarker.stationLayer;
 					}
 				});
@@ -656,6 +667,7 @@
 							_marker = new CircleMarker(latlng, row, style);
 							_marker.stationLayer = markerClusterLayer;
 							app.updateSoiRow(_marker.addTo(markerLayer));
+							return false;
 						}
 					});
 				}
