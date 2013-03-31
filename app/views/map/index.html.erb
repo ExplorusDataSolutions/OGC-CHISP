@@ -1,5 +1,5 @@
 <div id="map" style="margin-top:2px"></div>
-<div id="list-container" style="height:100px">
+<div id="list-container">
 	<div id="list-wrapper">
 		<table id="list-point" class="list-point table table-striped table-bordered table-hover table-condensed hide">
 			<thead>
@@ -608,7 +608,7 @@
 				var $tb = $('#list-point'), $wrapper = $('#list-wrapper');
 				var $container = $('#list-container');
 				var visibleRows = $tb.find('tbody tr:visible').length;
-				visibleRows == 0 && $tb.hide();
+				visibleRows == 0 && $tb.hide() && $container.hide();
 				if (visibleRows >= 5) {
 					if (!$tb[0]._fixed) {
 						$tb.fixedHeaderTable({
