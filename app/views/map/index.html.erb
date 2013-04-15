@@ -824,7 +824,7 @@
 			style : {
 				color : '#00933B', // for svg marker and cluster marker
 			},
-			url : 'http://nwisvaws02.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
+			url : 'http://webvastage6.er.usgs.gov/ogc-swie/wfs?request=GetFeature&featureId=05113600,05114000,05116000,05116500,05117500,05120000,05120500,05121000,05121001,05122000,05123400,05123510,05124000,06133500,06135000,06139500,06140500,06142400,06151500,06154100,06154400,06155030,06155500,06164510,06166000,06167500,06169500,06172310,06174500',
 			bounds : bounds,
 			layerName : 'USGS Surface Water',
 			elementTag : 'member',
@@ -868,6 +868,32 @@
 					id : $(element).find('identifier').text(),
 					name : $(element).find('description').text(),
 					type : 'EC Surface Water',
+				};
+			},
+			onLoad : app.syncMarkers,
+		}).addTo(map));
+		
+		// a specified bounds
+		layersControl.addOverlay(new MarkerClusterGroup({
+			style : {
+				color : '#9966CC', // for svg marker and cluster marker
+			},
+			url : ['http://ngwd-bdnes.cits.nrcan.gc.ca/GinService/sos/gw?', //
+			'REQUEST=GetFeatureOfInterest', //
+			'&VERSION=2.0.0', //
+			'&SERVICE=SOS', //
+			'&spatialFilter=om:featureOfInterest/*/sams:shape,{bBoxString}', //
+			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
+			.join(''),
+			bounds : new L.LatLngBounds([50.5, -116], [51.6, -114.3]),
+			layerName : 'NRCAN ground water',
+			elementTag : 'featureMember',
+			positionTag : 'pos',
+			data : function(element) {
+				return {
+					id : $(element).find('identifier').text(),
+					name : $(element).find('description').text(),
+					type : 'NRCAN ground water',
 				};
 			},
 			onLoad : app.syncMarkers,
