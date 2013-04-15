@@ -886,14 +886,14 @@
 			'&namespaces=xmlns(sams,http://www.opengis.net/samplingSpatial/2.0),xmlns(om,http://www.opengis.net/om/2.0)']//
 			.join(''),
 			bounds : bounds, //new L.LatLngBounds([50.5, -116], [51.6, -114.3]),
-			layerName : 'NRCAN ground water',
+			layerName : 'Groundwater Information Network (Canada)',
 			elementTag : 'featureMember',
 			positionTag : 'pos',
 			data : function(element) {
 				return {
 					id : $(element).find('identifier').text(),
 					name : $(element).find('description').text(),
-					type : 'NRCAN ground water',
+					type : 'Groundwater Information Network (Canada)',
 				};
 			},
 			onLoad : app.syncMarkers,
