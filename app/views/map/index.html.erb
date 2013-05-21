@@ -253,7 +253,7 @@
 					url : '/proxy',
 					type : 'post',
 					data : {
-						url : "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=Unsubscribe&email=" + this.loginedEmail(),
+						url : "http://59.125.87.213/WNS/Broker/RegisterInfo.ashx?op=Unsubscribe&email=" + this.loginedEmail(),
 						json : JSON.stringify(poiIDs),
 					},
 					dataType : 'json',
@@ -713,7 +713,7 @@
 			style : {
 				color : '#0266C8', // for svg marker and cluster marker
 			},
-			url : "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=GetUserSubscription",
+			url : "http://59.125.87.213/WNS/Broker/RegisterInfo.ashx?op=GetUserSubscription",
 			email : app.loginedEmail(),
 			onClick : function() {
 				var t0, t1, timer;
@@ -779,7 +779,7 @@
 							/**
 							 * @see https://github.com/tesera/OGC-CHISP/wiki/GIS-FCU-Subscription-Broker-API
 							 */
-							url : "http://140.134.48.13/WNS/Broker/RegisterInfo.ashx?op=subscribe",
+							url : "http://59.125.87.213/WNS/Broker/RegisterInfo.ashx?op=subscribe",
 							json : JSON.stringify(data),
 						},
 						dataType : 'json',
